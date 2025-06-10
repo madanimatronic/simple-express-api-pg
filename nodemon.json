@@ -1,0 +1,8 @@
+{
+  "watch": ["src"],
+  "ignore": ["src/**/*.test.ts", "node_modules"],
+  "ext": "ts,mts,js,mjs,json,graphql",
+  "execMap": {
+    "ts": "tsx"
+  }
+}

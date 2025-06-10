@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2024",
+    "lib": ["ES2024"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "incremental": true,
+    "removeComments": true,
+    "allowSyntheticDefaultImports": true,
+    "checkJs": true,
+    "forceConsistentCasingInFileNames": true,
+    "paths": { "@/*": ["./src/*"], "@/public/*": ["./public/*"] }
+  },
+  "include": ["./src/**/*.ts", "./src/**/*.mts"],
+  "exclude": ["./dist/**/*", "./node_modules/**/*"]
+}

@@ -1,0 +1,42 @@
+{
+  "name": "simple-express-api-pg",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "nodemon src/index.ts",
+    "build": "node esbuild.config.mjs",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint",
+    "format": "prettier --check ./src",
+    "format:fix": "prettier --write ./src",
+    "migrate": "tsx ./src/db/migrate.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "express-fileupload": "^1.5.1",
+    "pg": "^8.16.0",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.27.0",
+    "@types/express": "^5.0.2",
+    "@types/express-fileupload": "^1.5.1",
+    "@types/node": "^22.15.19",
+    "@types/pg": "^8.15.4",
+    "esbuild": "^0.25.4",
+    "eslint": "^9.27.0",
+    "eslint-config-prettier": "^10.1.5",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.5.3",
+    "prettier-plugin-organize-imports": "^4.1.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.32.1"
+  }
+}
