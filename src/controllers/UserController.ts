@@ -1,11 +1,13 @@
 import { userService } from '@/services/UserService';
+import { UserCreationData } from '@/types/User';
 import { Request, Response } from 'express';
 
 class UserController {
   async create(req: Request, res: Response) {
-    const user = req.body;
+    const { name, about, points } = req.body;
+    const userData: UserCreationData = { name, about, points: Number(points) };
 
-    const newUser = await userService.create(user);
+    const newUser = await userService.create(userData);
 
     res.json(newUser);
   }
@@ -31,7 +33,9 @@ class UserController {
 
   async update(req: Request, res: Response) {
     const id = Number(req.params.id);
-    const userData = req.body;
+
+    const { name, about, points } = req.body;
+    const userData: UserCreationData = { name, about, points: Number(points) };
 
     const updatedUser = await userService.update(id, userData);
 

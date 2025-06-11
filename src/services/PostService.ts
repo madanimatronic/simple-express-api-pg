@@ -15,7 +15,18 @@ class PostService {
         await fileService.saveFile(thumbnailFile);
     }
 
-    return await postRepository.create(postDataWithThumbnail);
+    try {
+      const newPost = await postRepository.create(postDataWithThumbnail);
+
+      return newPost;
+    } catch (err) {
+      // Если при создании поста произошла ошибка, то удаляем созданную картинку (если создавали)
+      if (postDataWithThumbnail.thumbnail) {
+        await fileService.deleteFile(postDataWithThumbnail.thumbnail);
+      }
+
+      throw err;
+    }
   }
 
   async getAll() {
@@ -79,7 +90,6 @@ class PostService {
 
       return updatedPost;
     } catch (err) {
-      // Если при обновлении поста произошла ошибка, то удаляем созданную картинку (если создавали)
       if (postDataWithThumbnail.thumbnail) {
         await fileService.deleteFile(postDataWithThumbnail.thumbnail);
       }
