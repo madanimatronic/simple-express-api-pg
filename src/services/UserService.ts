@@ -20,8 +20,6 @@ class UserService {
 
   // Только полное обновление. Если что-то не указано в userData - оно будет null (логика как при создании)
   async update(id: number, userData: UserCreationData) {
-    // TODO: возможно стоит пересмотреть проверку аргументов
-    // например, либо не проверять, либо проверять все
     if (!id) {
       throw new Error('Id is missing');
     }

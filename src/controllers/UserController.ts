@@ -1,11 +1,11 @@
 import { userService } from '@/services/UserService';
-import { UserCreationData } from '@/types/User';
+import { coercedIntIdSchema } from '@/validation/common';
+import { userCreationSchema } from '@/validation/user-validation';
 import { Request, Response } from 'express';
 
 class UserController {
   async create(req: Request, res: Response) {
-    const { name, about, points } = req.body;
-    const userData: UserCreationData = { name, about, points: Number(points) };
+    const userData = userCreationSchema.parse(req.body);
 
     const newUser = await userService.create(userData);
 
@@ -19,7 +19,7 @@ class UserController {
   }
 
   async getById(req: Request, res: Response) {
-    const id = Number(req.params.id);
+    const id = coercedIntIdSchema.parse(req.params.id);
 
     const user = await userService.getById(id);
 
@@ -32,10 +32,9 @@ class UserController {
   }
 
   async update(req: Request, res: Response) {
-    const id = Number(req.params.id);
+    const id = coercedIntIdSchema.parse(req.params.id);
 
-    const { name, about, points } = req.body;
-    const userData: UserCreationData = { name, about, points: Number(points) };
+    const userData = userCreationSchema.parse(req.body);
 
     const updatedUser = await userService.update(id, userData);
 
@@ -48,7 +47,7 @@ class UserController {
   }
 
   async delete(req: Request, res: Response) {
-    const id = Number(req.params.id);
+    const id = coercedIntIdSchema.parse(req.params.id);
 
     const deletedUser = await userService.delete(id);
 

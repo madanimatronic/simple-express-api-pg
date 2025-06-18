@@ -1,12 +1,5 @@
-export interface User {
-  id: number;
-  name: string;
-  about: string | null;
-  points: number;
-}
+import { userCreationSchema, userSchema } from '@/validation/user-validation';
+import { z } from 'zod/v4';
 
-export interface UserCreationData {
-  name: string;
-  about?: string;
-  points?: number;
-}
+export type User = z.infer<typeof userSchema>;
+export type UserCreationData = z.infer<typeof userCreationSchema>;

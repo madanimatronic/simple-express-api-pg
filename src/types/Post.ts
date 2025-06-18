@@ -1,20 +1,14 @@
-export interface Post {
-  id: number;
-  title: string;
-  author_id: number | null;
-  content: string;
-  thumbnail: PostThumbnail | null;
-}
+import {
+  postCreationSchema,
+  postCreationSchemaWithThumbnail,
+  postSchema,
+  postThumbnailSchema,
+} from '@/validation/post-validation';
+import { z } from 'zod/v4';
 
-// thumbnail указывается отдельно при создании поста, поэтому PostCreationData его не содержит
-export interface PostCreationData {
-  title: string;
-  authorId: number;
-  content: string;
-}
-
-export type PostCreationDataWithThumbnail = PostCreationData & {
-  thumbnail?: PostThumbnail;
-};
-
-export type PostThumbnail = string;
+export type Post = z.infer<typeof postSchema>;
+export type PostCreationData = z.infer<typeof postCreationSchema>;
+export type PostCreationDataWithThumbnail = z.infer<
+  typeof postCreationSchemaWithThumbnail
+>;
+export type PostThumbnail = z.infer<typeof postThumbnailSchema>;

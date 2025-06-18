@@ -1,15 +1,13 @@
 import { postService } from '@/services/PostService';
-import { Post, PostCreationData } from '@/types/Post';
+import { Post } from '@/types/Post';
+import { coercedIntIdSchema } from '@/validation/common';
+import { postCreationSchema } from '@/validation/post-validation';
 import { Request, Response } from 'express';
+import { z } from 'zod/v4';
 
 class PostController {
   async create(req: Request, res: Response) {
-    const { title, author_id: authorId, content } = req.body;
-    const postData: PostCreationData = {
-      title,
-      authorId: Number(authorId),
-      content,
-    };
+    const postData = postCreationSchema.parse(req.body);
 
     const thumbnailFile = req.files?.thumbnail;
 
@@ -26,7 +24,7 @@ class PostController {
   }
 
   async getAll(req: Request, res: Response) {
-    const userId = Number(req.query.userId);
+    const userId = z.optional(coercedIntIdSchema).parse(req.query.userId);
     let posts: Post[] | null = [];
 
     if (userId) {
@@ -44,7 +42,7 @@ class PostController {
   }
 
   async getById(req: Request, res: Response) {
-    const id = Number(req.params.id);
+    const id = coercedIntIdSchema.parse(req.params.id);
     const post = await postService.getById(id);
 
     if (!post) {
@@ -56,14 +54,9 @@ class PostController {
   }
 
   async update(req: Request, res: Response) {
-    const id = Number(req.params.id);
+    const id = coercedIntIdSchema.parse(req.params.id);
 
-    const { title, author_id: authorId, content } = req.body;
-    const postData: PostCreationData = {
-      title,
-      authorId: Number(authorId),
-      content,
-    };
+    const postData = postCreationSchema.parse(req.body);
 
     const thumbnailFile = req.files?.thumbnail;
 
@@ -85,7 +78,7 @@ class PostController {
   }
 
   async delete(req: Request, res: Response) {
-    const id = Number(req.params.id);
+    const id = coercedIntIdSchema.parse(req.params.id);
 
     const deletedPost = await postService.delete(id);
 
