@@ -13,6 +13,7 @@ export default tseslint.config(
       './src/**/*.mts',
       './src/**/*.js',
       './src/**/*.mjs',
+      './__tests__/**/*.test.ts',
     ],
     ignores: ['eslint.config.mjs'],
     plugins: { '@typescript-eslint': tseslint.plugin },
@@ -20,7 +21,7 @@ export default tseslint.config(
       parser: tseslint.parser,
       ecmaVersion: 'latest',
       sourceType: 'module',
-      globals: { ...globals.node },
+      globals: { ...globals.node, ...globals.jest },
       parserOptions: { project: './tsconfig.json' },
     },
     rules: {
