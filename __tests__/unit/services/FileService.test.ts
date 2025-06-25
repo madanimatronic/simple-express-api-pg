@@ -5,9 +5,26 @@ import path from 'node:path';
 
 const testUUID = 'ca1debbd-fa1d-4e48-9d46-a4e02eba8515';
 const testFileName = `${testUUID}.jpg`;
+const mockFile = {
+  name: 'testfile.jpg',
+  mv: jest.fn(async (path: string) => {}),
+  encoding: '7bit',
+  mimetype: 'image/jpeg',
+  data: Buffer.from([123, 123, 123]),
+  tempFilePath: '',
+  truncated: false,
+  size: 123,
+  md5: '10295e3c1853d6840a72a9db62f2051c',
+};
 
+const uuidv4Mock = jest.fn();
 jest.mock('uuid', () => ({
-  v4: () => 'ca1debbd-fa1d-4e48-9d46-a4e02eba8515',
+  // Данная функция-обертка нужна чтобы избежать ошибок вида
+  // "Cannot access ... before initialization"
+  // Это обусловлено порядком выполнения кода и всплытием jest.mock
+  v4: () => {
+    return uuidv4Mock.mockImplementation(() => testUUID)();
+  },
 }));
 
 describe('fileService', () => {
@@ -28,19 +45,7 @@ describe('fileService', () => {
   // т.к. нельзя получить метод .mv(), он есть только
   // у объекта UploadedFile, который получается из запроса
   describe('saveFile', () => {
-    const mockFile = {
-      name: 'testfile.jpg',
-      mv: jest.fn(async (path: string) => {}),
-      encoding: '7bit',
-      mimetype: 'image/jpeg',
-      data: Buffer.from([123, 123, 123]),
-      tempFilePath: '',
-      truncated: false,
-      size: 123,
-      md5: '10295e3c1853d6840a72a9db62f2051c',
-    };
-
-    it('should return filename after creating file', async () => {
+    it('should return file name after creating file', async () => {
       const fileName = await fileService.saveFile(mockFile);
 
       expect(mockFile.mv).toHaveBeenCalledTimes(1);
@@ -53,6 +58,26 @@ describe('fileService', () => {
       const result = await fileService.deleteFile(testFileName);
 
       expect(result).toBe(true);
+    });
+
+    it('should return false when attempting to delete a non-existent file', async () => {
+      jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      const result = await fileService.deleteFile('non-existent.png');
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('updateFile', () => {
+    it('should delete old file and return new file name', async () => {
+      const newTestUUID = '3cf517fa-8965-45bc-96e1-7dd8faed17d1';
+      // Ф-ции, определённые через mockImplementationOnce имеют приоритет при вызове мокнутой функции
+      uuidv4Mock.mockImplementationOnce(() => newTestUUID);
+
+      const fileName = await fileService.updateFile(testFileName, mockFile);
+
+      expect(fileName).toBe(`${newTestUUID}.jpg`);
     });
   });
 });
