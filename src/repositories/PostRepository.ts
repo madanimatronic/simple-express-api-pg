@@ -1,11 +1,13 @@
-import { pool } from '@/db';
 import { Post, PostCreationDataWithThumbnail } from '@/types/Post';
+import { DatabaseService } from '@/types/services/DatabaseService';
 
-class PostRepository {
+export class PostRepository {
+  constructor(private readonly dbService: DatabaseService) {}
+
   async create(postData: PostCreationDataWithThumbnail) {
     const { title, authorId, content, thumbnail } = postData;
 
-    const dbResponse = await pool.query<Post>(
+    const dbResponse = await this.dbService.query<Post>(
       'INSERT INTO posts (title, author_id, content, thumbnail) VALUES ($1, $2, $3, $4) RETURNING *',
       [title, authorId, content, thumbnail],
     );
@@ -14,13 +16,13 @@ class PostRepository {
   }
 
   async getAll() {
-    const dbResponse = await pool.query<Post>('SELECT * FROM posts');
+    const dbResponse = await this.dbService.query<Post>('SELECT * FROM posts');
 
     return dbResponse.rows;
   }
 
   async getById(id: number) {
-    const dbResponse = await pool.query<Post>(
+    const dbResponse = await this.dbService.query<Post>(
       'SELECT * FROM posts WHERE id = $1',
       [id],
     );
@@ -33,7 +35,7 @@ class PostRepository {
   }
 
   async getAllByUserId(id: number) {
-    const dbResponse = await pool.query<Post>(
+    const dbResponse = await this.dbService.query<Post>(
       'SELECT * FROM posts WHERE author_id = $1',
       [id],
     );
@@ -44,7 +46,7 @@ class PostRepository {
   async update(id: number, postData: PostCreationDataWithThumbnail) {
     const { title, authorId, content, thumbnail } = postData;
 
-    const dbResponse = await pool.query<Post>(
+    const dbResponse = await this.dbService.query<Post>(
       'UPDATE posts SET title = $1, author_id = $2, content = $3, thumbnail = $4 WHERE id = $5 RETURNING *',
       [title, authorId, content, thumbnail, id],
     );
@@ -57,7 +59,7 @@ class PostRepository {
   }
 
   async delete(id: number) {
-    const dbResponse = await pool.query<Post>(
+    const dbResponse = await this.dbService.query<Post>(
       'DELETE FROM posts WHERE id = $1 RETURNING *',
       [id],
     );
@@ -69,5 +71,3 @@ class PostRepository {
     return dbResponse.rows[0];
   }
 }
-
-export const postRepository = new PostRepository();

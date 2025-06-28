@@ -4,7 +4,7 @@ import fs from 'fs/promises';
 import path from 'node:path';
 import { v4 as uuidv4 } from 'uuid';
 
-class FileService {
+export class FileService {
   async saveFile(file: UploadedFile) {
     const fileExt = path.extname(file.name);
     const fileName = uuidv4() + fileExt;
@@ -38,5 +38,3 @@ class FileService {
     return newFileName;
   }
 }
-
-export const fileService = new FileService();

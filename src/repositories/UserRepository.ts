@@ -1,13 +1,15 @@
-import { pool } from '@/db';
+import { DatabaseService } from '@/types/services/DatabaseService';
 import { User, UserCreationData } from '@/types/User';
 
-class UserRepository {
+export class UserRepository {
+  constructor(private readonly dbService: DatabaseService) {}
+
   async create(userData: UserCreationData) {
     const { name, about, points } = userData;
 
     // TODO: можно использовать query builder'ы для динамических запросов вместо points || 0
     // Если points undefined -> в таблицу ставится NULL -> ошибка по ограничению NOT NULL
-    const dbResponse = await pool.query<User>(
+    const dbResponse = await this.dbService.query<User>(
       'INSERT INTO users (name, about, points) VALUES ($1, $2, $3) RETURNING *',
       [name, about, points || 0],
     );
@@ -16,13 +18,13 @@ class UserRepository {
   }
 
   async getAll() {
-    const dbResponse = await pool.query<User>('SELECT * FROM users');
+    const dbResponse = await this.dbService.query<User>('SELECT * FROM users');
 
     return dbResponse.rows;
   }
 
   async getById(id: number) {
-    const dbResponse = await pool.query<User>(
+    const dbResponse = await this.dbService.query<User>(
       'SELECT * FROM users WHERE id = $1',
       [id],
     );
@@ -37,7 +39,7 @@ class UserRepository {
   async update(id: number, userData: UserCreationData) {
     const { name, about, points } = userData;
 
-    const dbResponse = await pool.query<User>(
+    const dbResponse = await this.dbService.query<User>(
       'UPDATE users SET name = $1, about = $2, points = $3 WHERE id = $4 RETURNING *',
       [name, about, points || 0, id],
     );
@@ -50,7 +52,7 @@ class UserRepository {
   }
 
   async delete(id: number) {
-    const dbResponse = await pool.query<User>(
+    const dbResponse = await this.dbService.query<User>(
       'DELETE FROM users WHERE id = $1 RETURNING *',
       [id],
     );
@@ -62,5 +64,3 @@ class UserRepository {
     return dbResponse.rows[0];
   }
 }
-
-export const userRepository = new UserRepository();

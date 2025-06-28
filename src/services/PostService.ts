@@ -1,10 +1,16 @@
-import { postRepository } from '@/repositories/PostRepository';
+import { PostRepository } from '@/repositories/PostRepository';
 import { PostCreationData, PostCreationDataWithThumbnail } from '@/types/Post';
 import { UploadedFile } from 'express-fileupload';
-import { fileService } from './FileService';
-import { userService } from './UserService';
+import { FileService } from './FileService';
+import { UserService } from './UserService';
 
-class PostService {
+export class PostService {
+  constructor(
+    private readonly postRepository: PostRepository,
+    private readonly userService: UserService,
+    private readonly fileService: FileService,
+  ) {}
+
   async create(postContent: PostCreationData, thumbnailFile?: UploadedFile) {
     const postDataWithThumbnail: PostCreationDataWithThumbnail = {
       ...postContent,
@@ -12,17 +18,17 @@ class PostService {
 
     if (thumbnailFile) {
       postDataWithThumbnail.thumbnail =
-        await fileService.saveFile(thumbnailFile);
+        await this.fileService.saveFile(thumbnailFile);
     }
 
     try {
-      const newPost = await postRepository.create(postDataWithThumbnail);
+      const newPost = await this.postRepository.create(postDataWithThumbnail);
 
       return newPost;
     } catch (err) {
       // Если при создании поста произошла ошибка, то удаляем созданную картинку (если создавали)
       if (postDataWithThumbnail.thumbnail) {
-        await fileService.deleteFile(postDataWithThumbnail.thumbnail);
+        await this.fileService.deleteFile(postDataWithThumbnail.thumbnail);
       }
 
       throw err;
@@ -30,7 +36,7 @@ class PostService {
   }
 
   async getAll() {
-    return await postRepository.getAll();
+    return await this.postRepository.getAll();
   }
 
   async getById(id: number) {
@@ -38,7 +44,7 @@ class PostService {
       throw new Error('Id is missing');
     }
 
-    return await postRepository.getById(id);
+    return await this.postRepository.getById(id);
   }
 
   async getAllByUserId(id: number) {
@@ -46,12 +52,12 @@ class PostService {
       throw new Error('User id is missing');
     }
 
-    const user = await userService.getById(id);
+    const user = await this.userService.getById(id);
     if (!user) {
       return null;
     }
 
-    return await postRepository.getAllByUserId(id);
+    return await this.postRepository.getAllByUserId(id);
   }
 
   async update(
@@ -63,7 +69,7 @@ class PostService {
       throw new Error('Id is missing');
     }
 
-    const oldPost = await postRepository.getById(id);
+    const oldPost = await this.postRepository.getById(id);
     if (!oldPost) {
       return null;
     }
@@ -75,23 +81,23 @@ class PostService {
 
     if (thumbnailFile) {
       postDataWithThumbnail.thumbnail =
-        await fileService.saveFile(thumbnailFile);
+        await this.fileService.saveFile(thumbnailFile);
     }
 
     try {
-      const updatedPost = await postRepository.update(
+      const updatedPost = await this.postRepository.update(
         id,
         postDataWithThumbnail,
       );
 
       if (oldPostThumbnail) {
-        await fileService.deleteFile(oldPostThumbnail);
+        await this.fileService.deleteFile(oldPostThumbnail);
       }
 
       return updatedPost;
     } catch (err) {
       if (postDataWithThumbnail.thumbnail) {
-        await fileService.deleteFile(postDataWithThumbnail.thumbnail);
+        await this.fileService.deleteFile(postDataWithThumbnail.thumbnail);
       }
 
       throw err;
@@ -103,18 +109,16 @@ class PostService {
       throw new Error('Id is missing');
     }
 
-    const deletedPost = await postRepository.delete(id);
+    const deletedPost = await this.postRepository.delete(id);
     if (!deletedPost) {
       return null;
     }
 
     const thumbnail = deletedPost.thumbnail;
     if (thumbnail) {
-      await fileService.deleteFile(thumbnail);
+      await this.fileService.deleteFile(thumbnail);
     }
 
     return deletedPost;
   }
 }
-
-export const postService = new PostService();

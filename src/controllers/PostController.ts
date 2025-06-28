@@ -1,11 +1,13 @@
-import { postService } from '@/services/PostService';
+import { PostService } from '@/services/PostService';
 import { Post } from '@/types/Post';
 import { coercedIntIdSchema } from '@/validation/common';
 import { postCreationSchema } from '@/validation/post-validation';
 import { Request, Response } from 'express';
 import { z } from 'zod/v4';
 
-class PostController {
+export class PostController {
+  constructor(private readonly postService: PostService) {}
+
   async create(req: Request, res: Response) {
     const postData = postCreationSchema.parse(req.body);
 
@@ -18,7 +20,7 @@ class PostController {
       return;
     }
 
-    const newPost = await postService.create(postData, thumbnailFile);
+    const newPost = await this.postService.create(postData, thumbnailFile);
 
     res.json(newPost);
   }
@@ -28,9 +30,9 @@ class PostController {
     let posts: Post[] | null = [];
 
     if (userId) {
-      posts = await postService.getAllByUserId(userId);
+      posts = await this.postService.getAllByUserId(userId);
     } else {
-      posts = await postService.getAll();
+      posts = await this.postService.getAll();
     }
 
     if (!posts) {
@@ -43,7 +45,7 @@ class PostController {
 
   async getById(req: Request, res: Response) {
     const id = coercedIntIdSchema.parse(req.params.id);
-    const post = await postService.getById(id);
+    const post = await this.postService.getById(id);
 
     if (!post) {
       res.status(404).json({ error: 'Post not found' });
@@ -67,7 +69,11 @@ class PostController {
       return;
     }
 
-    const updatedPost = await postService.update(id, postData, thumbnailFile);
+    const updatedPost = await this.postService.update(
+      id,
+      postData,
+      thumbnailFile,
+    );
 
     if (!updatedPost) {
       res.status(404).json({ error: 'Post not found' });
@@ -80,7 +86,7 @@ class PostController {
   async delete(req: Request, res: Response) {
     const id = coercedIntIdSchema.parse(req.params.id);
 
-    const deletedPost = await postService.delete(id);
+    const deletedPost = await this.postService.delete(id);
 
     if (!deletedPost) {
       res.status(404).json({ error: 'Post not found' });
@@ -90,5 +96,3 @@ class PostController {
     res.json(deletedPost);
   }
 }
-
-export const postController = new PostController();

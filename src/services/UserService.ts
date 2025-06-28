@@ -1,13 +1,15 @@
-import { userRepository } from '@/repositories/UserRepository';
+import { UserRepository } from '@/repositories/UserRepository';
 import { UserCreationData } from '@/types/User';
 
-class UserService {
+export class UserService {
+  constructor(private readonly userRepository: UserRepository) {}
+
   async create(userData: UserCreationData) {
-    return await userRepository.create(userData);
+    return await this.userRepository.create(userData);
   }
 
   async getAll() {
-    return await userRepository.getAll();
+    return await this.userRepository.getAll();
   }
 
   async getById(id: number) {
@@ -15,7 +17,7 @@ class UserService {
       throw new Error('Id is missing');
     }
 
-    return await userRepository.getById(id);
+    return await this.userRepository.getById(id);
   }
 
   // Только полное обновление. Если что-то не указано в userData - оно будет null (логика как при создании)
@@ -24,7 +26,7 @@ class UserService {
       throw new Error('Id is missing');
     }
 
-    return await userRepository.update(id, userData);
+    return await this.userRepository.update(id, userData);
   }
 
   async delete(id: number) {
@@ -32,8 +34,6 @@ class UserService {
       throw new Error('Id is missing');
     }
 
-    return await userRepository.delete(id);
+    return await this.userRepository.delete(id);
   }
 }
-
-export const userService = new UserService();
