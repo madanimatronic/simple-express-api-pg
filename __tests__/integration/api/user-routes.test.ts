@@ -1,4 +1,5 @@
 import { App } from '@/app';
+import { UserCreationData } from '@/types/User';
 import {
   PostgreSqlContainer,
   StartedPostgreSqlContainer,
@@ -8,15 +9,23 @@ import { Server } from 'node:http';
 import { Pool } from 'pg';
 import request from 'supertest';
 
-// TODO:
-// - Реализовать тесты для эндпоинтов:
-// userRouter.post('/users', userController.create);
-// userRouter.get('/users', userController.getAll);
-// userRouter.get('/users/:id', userController.getById);
-// userRouter.put('/users/:id', userController.update);
-// userRouter.delete('/users/:id', userController.delete);
+const testUser = { name: 'First user', about: 'just a test user', points: 10 };
+const testUsers: UserCreationData[] = [];
+for (let i = 0; i < 3; i++) {
+  testUsers.push({
+    name: `User number ${i + 1}`,
+    about: 'just a test user',
+    points: (i + 1) * 100,
+  });
+}
+const testUsersFromDB = testUsers.map((user, index) => ({
+  id: index + 1,
+  ...user,
+}));
+const invalidInputResponse = { error: 'Invalid Input' };
+const userNotFoundResponse = { error: 'User not found' };
 
-describe('POST /users', () => {
+describe('User Router', () => {
   jest.setTimeout(60000);
 
   let postgresContainer: StartedPostgreSqlContainer;
@@ -55,13 +64,10 @@ describe('POST /users', () => {
     httpServer = app.httpServer!;
   });
 
-  beforeEach(async () => {
+  afterEach(async () => {
     await testPool.query(
       'TRUNCATE TABLE users, posts RESTART IDENTITY CASCADE',
     );
-  });
-
-  afterEach(() => {
     jest.resetAllMocks();
   });
 
@@ -71,16 +77,186 @@ describe('POST /users', () => {
     httpServer.close();
   });
 
-  it('should create and return new user', async () => {
-    const response = await request(expressApp)
-      .post('/api/users')
-      .send({ name: 'First user', about: 'just a test user', points: 10 });
+  describe('POST /users', () => {
+    describe('given valid input', () => {
+      it('should create and return new user', async () => {
+        const response = await request(expressApp)
+          .post('/api/users')
+          .send(testUser);
 
-    expect(response.body).toEqual({
-      id: 1,
-      name: 'First user',
-      about: 'just a test user',
-      points: 10,
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({
+          id: 1,
+          ...testUser,
+        });
+      });
+
+      it('should create and return new user if minimal data provided', async () => {
+        const response = await request(expressApp)
+          .post('/api/users')
+          .send({ name: testUser.name });
+
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({
+          id: 1,
+          name: testUser.name,
+          about: null,
+          points: 0,
+        });
+      });
+
+      it('should create and return new user if some users already exist', async () => {
+        for (const user of testUsers) {
+          await request(expressApp).post('/api/users').send(user);
+        }
+
+        const response = await request(expressApp)
+          .post('/api/users')
+          .send(testUser);
+
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({
+          id: 4,
+          ...testUser,
+        });
+      });
+    });
+
+    describe('given invalid input', () => {
+      it('should return bad request error for invalid request', async () => {
+        const response = await request(expressApp)
+          .post('/api/users')
+          .send({ about: testUser.about, points: testUser.points });
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(invalidInputResponse);
+      });
+
+      it('should return bad request error if points is not int', async () => {
+        const response = await request(expressApp)
+          .post('/api/users')
+          .send({
+            ...testUser,
+            points: 10.55,
+          });
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(invalidInputResponse);
+      });
+    });
+  });
+
+  describe('GET /users', () => {
+    beforeEach(async () => {
+      for (const user of testUsers) {
+        await request(expressApp).post('/api/users').send(user);
+      }
+    });
+
+    it('should return all existing users', async () => {
+      const response = await request(expressApp).get('/api/users');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual(testUsersFromDB);
+    });
+  });
+
+  describe('GET /users/:id', () => {
+    beforeEach(async () => {
+      for (const user of testUsers) {
+        await request(expressApp).post('/api/users').send(user);
+      }
+    });
+
+    describe('given valid input', () => {
+      it('should return existing user', async () => {
+        const response = await request(expressApp).get('/api/users/1');
+
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual(testUsersFromDB[0]);
+      });
+    });
+
+    describe('given invalid input', () => {
+      it('should return bad request error if id is invalid', async () => {
+        const response = await request(expressApp).get('/api/users/invalid-id');
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(invalidInputResponse);
+      });
+    });
+  });
+
+  describe('PUT /users/:id', () => {
+    beforeEach(async () => {
+      await request(expressApp).post('/api/users').send(testUser);
+    });
+
+    describe('given valid input', () => {
+      it('should update and return updated user', async () => {
+        const updatedUser = {
+          name: 'updated user',
+          about: 'updated info',
+          points: 900,
+        };
+
+        const response = await request(expressApp)
+          .put('/api/users/1')
+          .send(updatedUser);
+
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({ id: 1, ...updatedUser });
+      });
+    });
+
+    describe('given invalid input', () => {
+      it('should return bad request error for invalid data', async () => {
+        const updatedUser = {
+          name: 'updated user',
+          about: 'updated info',
+          points: 'invalid-data',
+        };
+
+        const response = await request(expressApp)
+          .put('/api/users/1')
+          .send(updatedUser);
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(invalidInputResponse);
+      });
+    });
+  });
+
+  describe('DELETE /users/:id', () => {
+    beforeEach(async () => {
+      await request(expressApp).post('/api/users').send(testUser);
+    });
+
+    describe('given valid input', () => {
+      it('should delete and return deleted user', async () => {
+        const response = await request(expressApp).delete('/api/users/1');
+
+        expect(response.status).toBe(200);
+        expect(response.body).toEqual({ id: 1, ...testUser });
+      });
+
+      it('should return user not found error if user does not exist', async () => {
+        const response = await request(expressApp).delete('/api/users/99');
+
+        expect(response.status).toBe(404);
+        expect(response.body).toEqual(userNotFoundResponse);
+      });
+    });
+
+    describe('given invalid input', () => {
+      it('should return bad request error for invalid data', async () => {
+        const response = await request(expressApp).delete(
+          '/api/users/invalid-id',
+        );
+
+        expect(response.status).toBe(400);
+        expect(response.body).toEqual(invalidInputResponse);
+      });
     });
   });
 });
