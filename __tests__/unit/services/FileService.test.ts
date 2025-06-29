@@ -1,10 +1,10 @@
 import { env } from '@/config/env';
-import { fileService } from '@/services/FileService';
+import { FileService } from '@/services/FileService';
 import mockFS from 'mock-fs';
 import path from 'node:path';
+import { testUUID } from '../../data/common';
+import { testFileName } from '../../data/file-data';
 
-const testUUID = 'ca1debbd-fa1d-4e48-9d46-a4e02eba8515';
-const testFileName = `${testUUID}.jpg`;
 const mockFile = {
   name: 'testfile.jpg',
   mv: jest.fn(async (path: string) => {}),
@@ -28,6 +28,8 @@ jest.mock('uuid', () => ({
 }));
 
 describe('fileService', () => {
+  const fileService = new FileService();
+
   beforeEach(() => {
     mockFS({
       [path.resolve(env.STATIC_FOLDER_PATH)]: {

@@ -2,8 +2,7 @@ import { App } from '@/app';
 import { Express } from 'express';
 import { Server } from 'node:http';
 import request from 'supertest';
-
-const notFoundResponse = { error: 'Not Found' };
+import { notFoundResponse } from '../../data/api-responses';
 
 describe('API Errors', () => {
   let expressApp: Express;

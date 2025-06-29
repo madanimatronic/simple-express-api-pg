@@ -1,5 +1,4 @@
 import { App } from '@/app';
-import { UserCreationData } from '@/types/User';
 import {
   PostgreSqlContainer,
   StartedPostgreSqlContainer,
@@ -8,22 +7,15 @@ import { Express } from 'express';
 import { Server } from 'node:http';
 import { Pool } from 'pg';
 import request from 'supertest';
-
-const testUser = { name: 'First user', about: 'just a test user', points: 10 };
-const testUsers: UserCreationData[] = [];
-for (let i = 0; i < 3; i++) {
-  testUsers.push({
-    name: `User number ${i + 1}`,
-    about: 'just a test user',
-    points: (i + 1) * 100,
-  });
-}
-const testUsersFromDB = testUsers.map((user, index) => ({
-  id: index + 1,
-  ...user,
-}));
-const invalidInputResponse = { error: 'Invalid Input' };
-const userNotFoundResponse = { error: 'User not found' };
+import {
+  invalidInputResponse,
+  userNotFoundResponse,
+} from '../../data/api-responses';
+import {
+  createdTestUsers,
+  testUserData,
+  testUsersData,
+} from '../../data/user-data';
 
 describe('User Router', () => {
   jest.setTimeout(60000);
@@ -82,42 +74,42 @@ describe('User Router', () => {
       it('should create and return new user', async () => {
         const response = await request(expressApp)
           .post('/api/users')
-          .send(testUser);
+          .send(testUserData);
 
         expect(response.status).toBe(200);
         expect(response.body).toEqual({
           id: 1,
-          ...testUser,
+          ...testUserData,
         });
       });
 
       it('should create and return new user if minimal data provided', async () => {
         const response = await request(expressApp)
           .post('/api/users')
-          .send({ name: testUser.name });
+          .send({ name: testUserData.name });
 
         expect(response.status).toBe(200);
         expect(response.body).toEqual({
           id: 1,
-          name: testUser.name,
+          name: testUserData.name,
           about: null,
           points: 0,
         });
       });
 
       it('should create and return new user if some users already exist', async () => {
-        for (const user of testUsers) {
-          await request(expressApp).post('/api/users').send(user);
+        for (const userData of testUsersData) {
+          await request(expressApp).post('/api/users').send(userData);
         }
 
         const response = await request(expressApp)
           .post('/api/users')
-          .send(testUser);
+          .send(testUserData);
 
         expect(response.status).toBe(200);
         expect(response.body).toEqual({
           id: 4,
-          ...testUser,
+          ...testUserData,
         });
       });
     });
@@ -126,7 +118,7 @@ describe('User Router', () => {
       it('should return bad request error for invalid request', async () => {
         const response = await request(expressApp)
           .post('/api/users')
-          .send({ about: testUser.about, points: testUser.points });
+          .send({ about: testUserData.about, points: testUserData.points });
 
         expect(response.status).toBe(400);
         expect(response.body).toEqual(invalidInputResponse);
@@ -136,7 +128,7 @@ describe('User Router', () => {
         const response = await request(expressApp)
           .post('/api/users')
           .send({
-            ...testUser,
+            ...testUserData,
             points: 10.55,
           });
 
@@ -148,8 +140,8 @@ describe('User Router', () => {
 
   describe('GET /users', () => {
     beforeEach(async () => {
-      for (const user of testUsers) {
-        await request(expressApp).post('/api/users').send(user);
+      for (const userData of testUsersData) {
+        await request(expressApp).post('/api/users').send(userData);
       }
     });
 
@@ -157,14 +149,14 @@ describe('User Router', () => {
       const response = await request(expressApp).get('/api/users');
 
       expect(response.status).toBe(200);
-      expect(response.body).toEqual(testUsersFromDB);
+      expect(response.body).toEqual(createdTestUsers);
     });
   });
 
   describe('GET /users/:id', () => {
     beforeEach(async () => {
-      for (const user of testUsers) {
-        await request(expressApp).post('/api/users').send(user);
+      for (const userData of testUsersData) {
+        await request(expressApp).post('/api/users').send(userData);
       }
     });
 
@@ -173,7 +165,7 @@ describe('User Router', () => {
         const response = await request(expressApp).get('/api/users/1');
 
         expect(response.status).toBe(200);
-        expect(response.body).toEqual(testUsersFromDB[0]);
+        expect(response.body).toEqual(createdTestUsers[0]);
       });
     });
 
@@ -189,7 +181,7 @@ describe('User Router', () => {
 
   describe('PUT /users/:id', () => {
     beforeEach(async () => {
-      await request(expressApp).post('/api/users').send(testUser);
+      await request(expressApp).post('/api/users').send(testUserData);
     });
 
     describe('given valid input', () => {
@@ -229,7 +221,7 @@ describe('User Router', () => {
 
   describe('DELETE /users/:id', () => {
     beforeEach(async () => {
-      await request(expressApp).post('/api/users').send(testUser);
+      await request(expressApp).post('/api/users').send(testUserData);
     });
 
     describe('given valid input', () => {
@@ -237,7 +229,7 @@ describe('User Router', () => {
         const response = await request(expressApp).delete('/api/users/1');
 
         expect(response.status).toBe(200);
-        expect(response.body).toEqual({ id: 1, ...testUser });
+        expect(response.body).toEqual({ id: 1, ...testUserData });
       });
 
       it('should return user not found error if user does not exist', async () => {
