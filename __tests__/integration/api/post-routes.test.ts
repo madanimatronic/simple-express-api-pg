@@ -1,4 +1,4 @@
-import { App } from '@/app';
+import { App } from '@/App';
 import { env } from '@/config/env';
 import { checkFileExistence } from '@/utils/utils';
 import {

@@ -1,4 +1,4 @@
-import { App } from '@/app';
+import { App } from '@/App';
 import { Express } from 'express';
 import { Server } from 'node:http';
 import request from 'supertest';
