@@ -2,7 +2,8 @@ import 'dotenv/config';
 import { z } from 'zod/v4';
 
 const envSchema = z.object({
-  NODE_ENV: z.string(),
+  // NODE_ENV: z.string(),
+  NODE_ENV: z.union([z.literal('development'), z.literal('production')]),
   APP_NAME: z.string(),
   CLIENT_HOME_URL: z.string(),
   CLIENT_EMAIL_VERIFIED_URL: z.string(),

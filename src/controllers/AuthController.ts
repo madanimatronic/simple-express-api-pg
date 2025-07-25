@@ -16,6 +16,7 @@ export class AuthController {
     res.cookie('refreshToken', newUserData.refreshToken, {
       maxAge: env.COOKIE_LIFETIME,
       httpOnly: true,
+      secure: env.NODE_ENV === 'production',
     });
 
     res.json(newUserData);
