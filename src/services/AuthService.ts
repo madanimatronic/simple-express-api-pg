@@ -1,0 +1,87 @@
+import { AuthUserDto } from '@/dto/AuthUserDto';
+import { FullUserDto } from '@/dto/FullUserDto';
+import { AuthRepository } from '@/repositories/AuthRepository';
+import { UserCreationData, UserFromDB } from '@/types/User';
+import bcrypt from 'bcrypt';
+import { v4 as uuidv4 } from 'uuid';
+import { EmailService } from './EmailService';
+import { TokenService } from './TokenService';
+import { UserService } from './UserService';
+
+export class AuthService {
+  constructor(
+    private readonly authRepository: AuthRepository,
+    private readonly userService: UserService,
+    private readonly tokenService: TokenService,
+    private readonly emailService: EmailService,
+  ) {}
+
+  async registerUser(userData: UserCreationData) {
+    const { email, password } = userData;
+
+    const existingUser = await this.userService.getByEmail(email);
+
+    if (existingUser) {
+      throw new Error(`User with email ${email} already exists`);
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 6);
+
+    const newUser = await this.userService.create({
+      ...userData,
+      password: hashedPassword,
+    });
+
+    const userDto = new AuthUserDto(newUser);
+
+    // Деструктуризация экземпляра класса для большей надёжности
+    const tokens = await this.tokenService.createTokensForUser({ ...userDto });
+
+    await this.initiateEmailVerification(newUser);
+
+    // TODO: возможно стоит вместо userDto отправлять
+    // более подробный объект данных пользователя (а может и нет)
+    return { ...tokens, user: userDto };
+  }
+
+  async verifyEmail(verificationUUID: string) {
+    if (!verificationUUID) {
+      throw new Error('verificationUUID is missing');
+    }
+
+    const user =
+      await this.authRepository.getUserByEmailVerificationUUID(
+        verificationUUID,
+      );
+
+    if (!user) {
+      throw new Error('Invalid verificationUUID');
+    }
+
+    await this.authRepository.deleteEmailVerificationUuidByUserId(user.id);
+
+    const userDto = new FullUserDto(user);
+
+    await this.userService.update(user.id, {
+      ...userDto,
+      isEmailVerified: true,
+    });
+  }
+
+  // TODO: если такой параметр избыточен, то передавать хотя бы
+  // userId и email
+  // private можно убрать при необходимости
+  private async initiateEmailVerification(user: UserFromDB) {
+    const emailVerificationUUID = uuidv4();
+
+    await this.authRepository.saveEmailVerificationUUID(
+      user.id,
+      emailVerificationUUID,
+    );
+
+    await this.emailService.sendVerificationEmail(
+      user.email,
+      emailVerificationUUID,
+    );
+  }
+}

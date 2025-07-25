@@ -1,6 +1,6 @@
 import { UserService } from '@/services/UserService';
 import { coercedIntIdSchema } from '@/validation/common';
-import { userCreationSchema } from '@/validation/user-validation';
+import { userCreationSchema, userSchema } from '@/validation/user-validation';
 import { Request, Response } from 'express';
 
 export class UserController {
@@ -36,7 +36,7 @@ export class UserController {
   async update(req: Request, res: Response) {
     const id = coercedIntIdSchema.parse(req.params.id);
 
-    const userData = userCreationSchema.parse(req.body);
+    const userData = userSchema.parse(req.body);
 
     const updatedUser = await this.userService.update(id, userData);
 

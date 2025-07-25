@@ -1,5 +1,6 @@
 import { UserRepository } from '@/repositories/UserRepository';
-import { UserCreationData } from '@/types/User';
+import { Email } from '@/types/auth';
+import { User, UserCreationData } from '@/types/User';
 
 export class UserService {
   constructor(private readonly userRepository: UserRepository) {}
@@ -20,8 +21,16 @@ export class UserService {
     return await this.userRepository.getById(id);
   }
 
+  async getByEmail(email: Email) {
+    if (!email) {
+      throw new Error('Email is missing');
+    }
+
+    return await this.userRepository.getByEmail(email);
+  }
+
   // Только полное обновление. Если что-то не указано в userData - оно будет null (логика как при создании)
-  async update(id: number, userData: UserCreationData) {
+  async update(id: number, userData: User) {
     if (!id) {
       throw new Error('Id is missing');
     }
