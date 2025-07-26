@@ -1,5 +1,6 @@
 import { AuthUserDto } from '@/dto/AuthUserDto';
 import { FullUserDto } from '@/dto/FullUserDto';
+import { BadRequestError, ConflictError } from '@/errors/http-errors';
 import { AuthRepository } from '@/repositories/AuthRepository';
 import { UserCreationData, UserFromDB } from '@/types/User';
 import bcrypt from 'bcrypt';
@@ -22,7 +23,9 @@ export class AuthService {
     const existingUser = await this.userService.getByEmail(email);
 
     if (existingUser) {
-      throw new Error(`User with email ${email} already exists`);
+      throw new ConflictError({
+        message: `User with email ${email} already exists`,
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 6);
@@ -46,7 +49,7 @@ export class AuthService {
 
   async verifyEmail(verificationUUID: string) {
     if (!verificationUUID) {
-      throw new Error('verificationUUID is missing');
+      throw new BadRequestError({ message: 'verificationUUID is missing' });
     }
 
     const user =
@@ -55,7 +58,7 @@ export class AuthService {
       );
 
     if (!user) {
-      throw new Error('Invalid verificationUUID');
+      throw new BadRequestError({ message: 'Invalid verificationUUID' });
     }
 
     await this.authRepository.deleteEmailVerificationUuidByUserId(user.id);

@@ -1,3 +1,4 @@
+import { BadRequestError, InternalServerError } from '@/errors/http-errors';
 import { PostRepository } from '@/repositories/PostRepository';
 import { PostCreationData, PostCreationDataWithThumbnail } from '@/types/Post';
 import { UploadedFile } from 'express-fileupload';
@@ -31,7 +32,7 @@ export class PostService {
         await this.fileService.deleteFile(postDataWithThumbnail.thumbnail);
       }
 
-      throw err;
+      throw new InternalServerError({ message: 'Post creation failed' });
     }
   }
 
@@ -41,7 +42,7 @@ export class PostService {
 
   async getById(id: number) {
     if (!id) {
-      throw new Error('Id is missing');
+      throw new BadRequestError({ message: 'Id is missing' });
     }
 
     return await this.postRepository.getById(id);
@@ -49,7 +50,7 @@ export class PostService {
 
   async getAllByUserId(id: number) {
     if (!id) {
-      throw new Error('User id is missing');
+      throw new BadRequestError({ message: 'Id is missing' });
     }
 
     const user = await this.userService.getById(id);
@@ -66,7 +67,7 @@ export class PostService {
     thumbnailFile?: UploadedFile,
   ) {
     if (!id) {
-      throw new Error('Id is missing');
+      throw new BadRequestError({ message: 'Id is missing' });
     }
 
     const oldPost = await this.postRepository.getById(id);
@@ -100,13 +101,13 @@ export class PostService {
         await this.fileService.deleteFile(postDataWithThumbnail.thumbnail);
       }
 
-      throw err;
+      throw new InternalServerError({ message: 'Post update failed' });
     }
   }
 
   async delete(id: number) {
     if (!id) {
-      throw new Error('Id is missing');
+      throw new BadRequestError({ message: 'Id is missing' });
     }
 
     const deletedPost = await this.postRepository.delete(id);

@@ -1,3 +1,4 @@
+import { BadRequestError } from '@/errors/http-errors';
 import { UserRepository } from '@/repositories/UserRepository';
 import { Email } from '@/types/auth';
 import { User, UserCreationData } from '@/types/User';
@@ -15,7 +16,7 @@ export class UserService {
 
   async getById(id: number) {
     if (!id) {
-      throw new Error('Id is missing');
+      throw new BadRequestError({ message: 'Id is missing' });
     }
 
     return await this.userRepository.getById(id);
@@ -23,7 +24,7 @@ export class UserService {
 
   async getByEmail(email: Email) {
     if (!email) {
-      throw new Error('Email is missing');
+      throw new BadRequestError({ message: 'Email is missing' });
     }
 
     return await this.userRepository.getByEmail(email);
@@ -32,7 +33,7 @@ export class UserService {
   // Только полное обновление. Если что-то не указано в userData - оно будет null (логика как при создании)
   async update(id: number, userData: User) {
     if (!id) {
-      throw new Error('Id is missing');
+      throw new BadRequestError({ message: 'Id is missing' });
     }
 
     return await this.userRepository.update(id, userData);
@@ -40,7 +41,7 @@ export class UserService {
 
   async delete(id: number) {
     if (!id) {
-      throw new Error('Id is missing');
+      throw new BadRequestError({ message: 'Id is missing' });
     }
 
     return await this.userRepository.delete(id);

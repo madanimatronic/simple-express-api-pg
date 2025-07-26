@@ -1,32 +1,43 @@
-export class HttpError extends Error {
+import {
+  CustomErrorIssues,
+  HttpErrorData,
+  PartialDescriptiveHttpErrorData,
+} from '@/types/errors';
+
+export class HttpError extends Error implements HttpErrorData {
   constructor(
     public status: number,
     public message: string,
-    // TODO: errors используется для того, чтобы передать туда детали ошибок
-    // например, ошибка при парсинге body -> в errors можно передать
-    // объекты из error.issues при обработке ошибки zod
-    // см. (https://zod.dev/basics?id=handling-errors)
-    // Подумать, нужен ли errors на самом деле?
-    public errors: string[] = [],
+    public issues?: CustomErrorIssues,
   ) {
     super(message);
   }
 }
 
-export class InternalServerError extends HttpError {
-  constructor() {
-    super(500, 'Internal Server Error');
-  }
-}
-
 export class BadRequestError extends HttpError {
-  constructor() {
-    super(400, 'Bad Request');
+  constructor(errorData?: PartialDescriptiveHttpErrorData) {
+    const { message = 'Bad Request', issues } = errorData ?? {};
+    super(400, message, issues);
   }
 }
 
 export class UnauthorizedError extends HttpError {
-  constructor() {
-    super(401, 'Unauthorized');
+  constructor(errorData?: PartialDescriptiveHttpErrorData) {
+    const { message = 'Unauthorized', issues } = errorData ?? {};
+    super(401, message, issues);
+  }
+}
+
+export class ConflictError extends HttpError {
+  constructor(errorData?: PartialDescriptiveHttpErrorData) {
+    const { message = 'Conflict Error', issues } = errorData ?? {};
+    super(409, message, issues);
+  }
+}
+
+export class InternalServerError extends HttpError {
+  constructor(errorData?: PartialDescriptiveHttpErrorData) {
+    const { message = 'Internal Server Error', issues } = errorData ?? {};
+    super(500, message, issues);
   }
 }
