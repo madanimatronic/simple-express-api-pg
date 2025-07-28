@@ -3,7 +3,6 @@ import { Router } from 'express';
 
 // TODO: может стоит нейминг немного поменять,
 // например /register-user, /login-user и т.д. (а может и нет)
-// TODO: сделать контроллер и добавить его сюда, перепроверить всё
 export const createAuthRouter = (authController: AuthController) => {
   const authRouter = Router();
 

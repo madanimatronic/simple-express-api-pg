@@ -19,6 +19,11 @@ export const userCreationSchema = z.object({
   password: passwordSchema,
 });
 
+export const userLoginSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+});
+
 export const userFromDbSchema = z.object({
   id: intIdSchema,
   name: z.string(),

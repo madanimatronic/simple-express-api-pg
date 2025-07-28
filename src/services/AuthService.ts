@@ -1,8 +1,13 @@
 import { AuthUserDto } from '@/dto/AuthUserDto';
 import { FullUserDto } from '@/dto/FullUserDto';
-import { BadRequestError, ConflictError } from '@/errors/http-errors';
+import {
+  BadRequestError,
+  ConflictError,
+  NotFoundError,
+  UnauthorizedError,
+} from '@/errors/http-errors';
 import { AuthRepository } from '@/repositories/AuthRepository';
-import { UserCreationData, UserFromDB } from '@/types/User';
+import { UserCreationData, UserFromDB, UserLoginData } from '@/types/User';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { EmailService } from './EmailService';
@@ -17,6 +22,7 @@ export class AuthService {
     private readonly emailService: EmailService,
   ) {}
 
+  // TODO: подумать об уместности названия registerUser
   async registerUser(userData: UserCreationData) {
     const { email, password } = userData;
 
@@ -44,6 +50,30 @@ export class AuthService {
 
     // TODO: возможно стоит вместо userDto отправлять
     // более подробный объект данных пользователя (а может и нет)
+    return { ...tokens, user: userDto };
+  }
+
+  async login(userData: UserLoginData) {
+    const { email, password } = userData;
+
+    const user = await this.userService.getByEmail(email);
+
+    if (!user) {
+      throw new NotFoundError({
+        message: `User with email ${email} doesn't exist`,
+      });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedError({ message: 'Wrong password' });
+    }
+
+    const userDto = new AuthUserDto(user);
+
+    const tokens = await this.tokenService.createTokensForUser({ ...userDto });
+
     return { ...tokens, user: userDto };
   }
 

@@ -28,6 +28,13 @@ export class UnauthorizedError extends HttpError {
   }
 }
 
+export class NotFoundError extends HttpError {
+  constructor(errorData?: PartialDescriptiveHttpErrorData) {
+    const { message = 'Not Found', issues } = errorData ?? {};
+    super(404, message, issues);
+  }
+}
+
 export class ConflictError extends HttpError {
   constructor(errorData?: PartialDescriptiveHttpErrorData) {
     const { message = 'Conflict Error', issues } = errorData ?? {};

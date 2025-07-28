@@ -1,7 +1,10 @@
 import { env } from '@/config/env';
 import { AuthService } from '@/services/AuthService';
 import { uuidSchema } from '@/validation/common';
-import { userCreationSchema } from '@/validation/user-validation';
+import {
+  userCreationSchema,
+  userLoginSchema,
+} from '@/validation/user-validation';
 import { Request, Response } from 'express';
 
 export class AuthController {
@@ -22,7 +25,20 @@ export class AuthController {
     res.json(newUserData);
   }
 
-  async login(req: Request, res: Response) {}
+  async login(req: Request, res: Response) {
+    const userLoginData = userLoginSchema.parse(req.body);
+
+    const userData = await this.authService.login(userLoginData);
+
+    // TODO: Избавиться от дублировния!
+    res.cookie('refreshToken', userData.refreshToken, {
+      maxAge: env.COOKIE_LIFETIME,
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+    });
+
+    res.json(userData);
+  }
 
   async logout(req: Request, res: Response) {}
 
