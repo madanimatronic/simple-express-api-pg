@@ -57,4 +57,30 @@ export class TokenRepository {
 
     return dbResponse.rows[0];
   }
+
+  async delete(refreshToken: JWT) {
+    const dbResponse = await this.dbService.query(
+      'DELETE FROM tokens WHERE refresh_token = $1 RETURNING *',
+      [refreshToken],
+    );
+
+    if (!dbResponse.rowCount) {
+      return null;
+    }
+
+    return dbResponse.rows[0];
+  }
+
+  async deleteByUserId(id: number) {
+    const dbResponse = await this.dbService.query(
+      'DELETE FROM tokens WHERE user_id = $1 RETURNING *',
+      [id],
+    );
+
+    if (!dbResponse.rowCount) {
+      return null;
+    }
+
+    return dbResponse.rows[0];
+  }
 }

@@ -1,5 +1,7 @@
 import { env } from '@/config/env';
+import { UnauthorizedError } from '@/errors/http-errors';
 import { AuthService } from '@/services/AuthService';
+import { jwtSchema } from '@/validation/auth-validation';
 import { uuidSchema } from '@/validation/common';
 import {
   userCreationSchema,
@@ -40,7 +42,19 @@ export class AuthController {
     res.json(userData);
   }
 
-  async logout(req: Request, res: Response) {}
+  async logout(req: Request, res: Response) {
+    const refreshToken = jwtSchema.parse(req.cookies.refreshToken);
+
+    const tokenData = await this.authService.logout(refreshToken);
+
+    if (!tokenData) {
+      throw new UnauthorizedError({ message: 'Invalid token' });
+    }
+
+    res.clearCookie('refreshToken');
+
+    return res.json({ result: 'success' });
+  }
 
   async verifyEmail(req: Request, res: Response) {
     const verificationUUID = uuidSchema.parse(req.params.uuid);

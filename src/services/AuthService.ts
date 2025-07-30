@@ -7,6 +7,7 @@ import {
   UnauthorizedError,
 } from '@/errors/http-errors';
 import { AuthRepository } from '@/repositories/AuthRepository';
+import { JWT } from '@/types/auth';
 import { UserCreationData, UserFromDB, UserLoginData } from '@/types/User';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
@@ -75,6 +76,10 @@ export class AuthService {
     const tokens = await this.tokenService.createTokensForUser({ ...userDto });
 
     return { ...tokens, user: userDto };
+  }
+
+  async logout(refreshToken: JWT) {
+    return await this.tokenService.deleteRefreshToken(refreshToken);
   }
 
   async verifyEmail(verificationUUID: string) {

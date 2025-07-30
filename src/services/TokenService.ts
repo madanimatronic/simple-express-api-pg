@@ -1,4 +1,5 @@
 import { env } from '@/config/env';
+import { BadRequestError } from '@/errors/http-errors';
 import { TokenRepository } from '@/repositories/TokenRepository';
 import {
   JWT,
@@ -75,5 +76,21 @@ export class TokenService {
     }
 
     return await this.tokenRepository.updateByUserId(userId, refreshToken);
+  }
+
+  async deleteRefreshToken(refreshToken: JWT) {
+    if (!refreshToken) {
+      throw new BadRequestError({ message: 'Refresh token is missing' });
+    }
+
+    return await this.tokenRepository.delete(refreshToken);
+  }
+
+  async deleteRefreshTokenByUserId(id: number) {
+    if (!id) {
+      throw new BadRequestError({ message: 'User id is missing' });
+    }
+
+    return await this.tokenRepository.deleteByUserId(id);
   }
 }
