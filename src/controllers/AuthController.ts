@@ -53,7 +53,7 @@ export class AuthController {
 
     res.clearCookie('refreshToken');
 
-    return res.json({ result: 'success' });
+    res.json({ result: 'success' });
   }
 
   async verifyEmail(req: Request, res: Response) {
