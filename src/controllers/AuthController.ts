@@ -64,5 +64,18 @@ export class AuthController {
     res.redirect(env.CLIENT_EMAIL_VERIFIED_URL);
   }
 
-  async refresh(req: Request, res: Response) {}
+  async refresh(req: Request, res: Response) {
+    const refreshToken = jwtSchema.parse(req.cookies.refreshToken);
+
+    const tokens = await this.authService.refreshTokens(refreshToken);
+
+    // TODO: Избавиться от дублировния!
+    res.cookie('refreshToken', tokens.refreshToken, {
+      maxAge: env.COOKIE_LIFETIME,
+      httpOnly: true,
+      secure: env.NODE_ENV === 'production',
+    });
+
+    res.json(tokens);
+  }
 }

@@ -1,5 +1,5 @@
 import { env } from '@/config/env';
-import { BadRequestError } from '@/errors/http-errors';
+import { BadRequestError, UnauthorizedError } from '@/errors/http-errors';
 import { TokenRepository } from '@/repositories/TokenRepository';
 import {
   JWT,
@@ -43,7 +43,7 @@ export class TokenService {
   }
 
   generateRefreshToken(payload: JWTPayload) {
-    return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
+    return jwt.sign(payload, env.JWT_REFRESH_SECRET, {
       expiresIn: env.JWT_REFRESH_LIFETIME as JWTLifetimeString,
     });
   }
@@ -92,5 +92,40 @@ export class TokenService {
     }
 
     return await this.tokenRepository.deleteByUserId(id);
+  }
+
+  async refreshTokensForUser(
+    userPayloadData: UserJWTPayload,
+    refreshToken: JWT,
+  ) {
+    const tokenFromDB = await this.tokenRepository.find(refreshToken);
+
+    if (!tokenFromDB) {
+      throw new UnauthorizedError({ message: 'Invalid refresh token' });
+    }
+
+    this.verifyRefreshToken(refreshToken);
+
+    return await this.createTokensForUser(userPayloadData);
+  }
+
+  decodeToken(token: JWT) {
+    return jwt.decode(token);
+  }
+
+  private verifyAccessToken(token: JWT) {
+    try {
+      return jwt.verify(token, env.JWT_ACCESS_SECRET);
+    } catch {
+      throw new UnauthorizedError({ message: 'Invalid access token' });
+    }
+  }
+
+  private verifyRefreshToken(token: JWT) {
+    try {
+      return jwt.verify(token, env.JWT_REFRESH_SECRET);
+    } catch {
+      throw new UnauthorizedError({ message: 'Invalid refresh token' });
+    }
   }
 }

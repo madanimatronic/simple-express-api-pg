@@ -13,7 +13,7 @@ export const createAuthRouter = (authController: AuthController) => {
     '/verify-email/:uuid',
     authController.verifyEmail.bind(authController),
   );
-  authRouter.get('/refresh', authController.refresh.bind(authController));
+  authRouter.post('/refresh', authController.refresh.bind(authController));
 
   return authRouter;
 };

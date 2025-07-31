@@ -14,6 +14,19 @@ export class TokenRepository {
     return dbResponse.rows[0];
   }
 
+  async find(refreshToken: JWT) {
+    const dbResponse = await this.dbService.query(
+      'SELECT * FROM tokens WHERE refresh_token = $1',
+      [refreshToken],
+    );
+
+    if (!dbResponse.rowCount) {
+      return null;
+    }
+
+    return dbResponse.rows[0];
+  }
+
   async getById(id: number) {
     const dbResponse = await this.dbService.query(
       'SELECT * FROM tokens WHERE id = $1',

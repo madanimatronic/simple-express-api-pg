@@ -9,6 +9,7 @@ import {
 import { AuthRepository } from '@/repositories/AuthRepository';
 import { JWT } from '@/types/auth';
 import { UserCreationData, UserFromDB, UserLoginData } from '@/types/User';
+import { userJwtPayloadSchema } from '@/validation/auth-validation';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { EmailService } from './EmailService';
@@ -104,6 +105,31 @@ export class AuthService {
       ...userDto,
       isEmailVerified: true,
     });
+  }
+
+  async refreshTokens(refreshToken: JWT) {
+    if (!refreshToken) {
+      throw new UnauthorizedError({ message: 'Refresh token is missing' });
+    }
+
+    const tokenPayload = this.tokenService.decodeToken(refreshToken);
+    const userPayload = userJwtPayloadSchema.parse(tokenPayload);
+
+    // Получаем актуальные данные пользователя, т.к. данные из токена могли устареть
+    const user = await this.userService.getById(userPayload.id);
+
+    if (!user) {
+      throw new UnauthorizedError({
+        message: "User by id extracted from token doesn't exist",
+      });
+    }
+
+    const userDto = new AuthUserDto(user);
+
+    return await this.tokenService.refreshTokensForUser(
+      { ...userDto },
+      refreshToken,
+    );
   }
 
   // TODO: если такой параметр избыточен, то передавать хотя бы
