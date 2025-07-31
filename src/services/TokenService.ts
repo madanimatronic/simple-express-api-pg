@@ -113,7 +113,7 @@ export class TokenService {
     return jwt.decode(token);
   }
 
-  private verifyAccessToken(token: JWT) {
+  verifyAccessToken(token: JWT) {
     try {
       return jwt.verify(token, env.JWT_ACCESS_SECRET);
     } catch {
@@ -121,7 +121,7 @@ export class TokenService {
     }
   }
 
-  private verifyRefreshToken(token: JWT) {
+  verifyRefreshToken(token: JWT) {
     try {
       return jwt.verify(token, env.JWT_REFRESH_SECRET);
     } catch {

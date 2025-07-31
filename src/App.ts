@@ -8,6 +8,7 @@ import { AuthController } from './controllers/AuthController';
 import { PostController } from './controllers/PostController';
 import { UserController } from './controllers/UserController';
 import { pool } from './db';
+import { authHandler } from './middleware/auth-handler';
 import { errorHandler } from './middleware/error-handler';
 import { notFoundHandler } from './middleware/not-found-handler';
 import { AuthRepository } from './repositories/AuthRepository';
@@ -73,9 +74,10 @@ export class App {
     this.expressApp.use(cors());
     this.expressApp.use('/static', express.static('static'));
     this.expressApp.use(fileUpload());
-    this.expressApp.use('/api', userRouter);
-    this.expressApp.use('/api', postRouter);
     this.expressApp.use('/api/auth', authRouter);
+    // TODO: Данный вариант для теста, сделать authHandler на уровне роутеров
+    this.expressApp.use('/api', authHandler(tokenService), userRouter);
+    this.expressApp.use('/api', authHandler(tokenService), postRouter);
     this.expressApp.use(notFoundHandler);
     this.expressApp.use(errorHandler());
   }

@@ -1,4 +1,5 @@
 import {
+  authHeaderSchema,
   emailSchema,
   jwtPayloadSchema,
   jwtSchema,
@@ -17,3 +18,5 @@ export type UserJWTPayload = z.infer<typeof userJwtPayloadSchema>;
 // Валидация строки-значения времени из jsonwebtoken, достаточно сложна,
 // поэтому используется данный тип для type assertion в местах где устанавливается expiresIn
 export type JWTLifetimeString = Extract<SignOptions['expiresIn'], string>;
+
+export type AuthHeader = z.infer<typeof authHeaderSchema>;
