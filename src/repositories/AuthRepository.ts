@@ -1,12 +1,12 @@
+import { EmailVerificationDataFromDB } from '@/types/email-verification-data';
 import { DatabaseService } from '@/types/services/DatabaseService';
 import { UserFromDB } from '@/types/User';
 
-// TODO: написать типы для значений из БД
 export class AuthRepository {
   constructor(private readonly dbService: DatabaseService) {}
 
   async saveEmailVerificationUUID(userId: number, uuid: string) {
-    const dbResponse = await this.dbService.query<any>(
+    const dbResponse = await this.dbService.query<EmailVerificationDataFromDB>(
       'INSERT INTO email_verifications (user_id, verification_uuid) VALUES ($1, $2) RETURNING *',
       [userId, uuid],
     );
@@ -32,7 +32,7 @@ export class AuthRepository {
   }
 
   async deleteEmailVerificationUuidByUserId(userId: number) {
-    const dbResponse = await this.dbService.query<any>(
+    const dbResponse = await this.dbService.query<EmailVerificationDataFromDB>(
       'DELETE FROM email_verifications WHERE user_id = $1 RETURNING *',
       [userId],
     );
@@ -46,7 +46,7 @@ export class AuthRepository {
 
   // TODO: можно использовать в cron или ещё как-то
   async deleteExpiredVerificationUUIDs() {
-    const dbResponse = await this.dbService.query<any>(
+    const dbResponse = await this.dbService.query<EmailVerificationDataFromDB>(
       'DELETE FROM email_verifications WHERE expires_at <= NOW() RETURNING *',
     );
 

@@ -1,12 +1,12 @@
 import { JWT } from '@/types/auth';
 import { DatabaseService } from '@/types/services/DatabaseService';
+import { UserTokenDataFromDB } from '@/types/user-token-data';
 
-// TODO: написать типы для значений из БД
 export class TokenRepository {
   constructor(private readonly dbService: DatabaseService) {}
 
   async create(userId: number, refreshToken: JWT) {
-    const dbResponse = await this.dbService.query(
+    const dbResponse = await this.dbService.query<UserTokenDataFromDB>(
       'INSERT INTO tokens (user_id, refresh_token) VALUES ($1, $2) RETURNING *',
       [userId, refreshToken],
     );
@@ -15,7 +15,7 @@ export class TokenRepository {
   }
 
   async find(refreshToken: JWT) {
-    const dbResponse = await this.dbService.query(
+    const dbResponse = await this.dbService.query<UserTokenDataFromDB>(
       'SELECT * FROM tokens WHERE refresh_token = $1',
       [refreshToken],
     );
@@ -28,7 +28,7 @@ export class TokenRepository {
   }
 
   async getById(id: number) {
-    const dbResponse = await this.dbService.query(
+    const dbResponse = await this.dbService.query<UserTokenDataFromDB>(
       'SELECT * FROM tokens WHERE id = $1',
       [id],
     );
@@ -41,7 +41,7 @@ export class TokenRepository {
   }
 
   async getByUserId(id: number) {
-    const dbResponse = await this.dbService.query(
+    const dbResponse = await this.dbService.query<UserTokenDataFromDB>(
       'SELECT * FROM tokens WHERE user_id = $1',
       [id],
     );
@@ -59,7 +59,7 @@ export class TokenRepository {
   // TODO (feat): в случае реализации, где 1 пользователь имеет много refresh токенов
   // этот метод станет бесполнезным
   async updateByUserId(id: number, refreshToken: JWT) {
-    const dbResponse = await this.dbService.query(
+    const dbResponse = await this.dbService.query<UserTokenDataFromDB>(
       'UPDATE tokens SET refresh_token = $1 WHERE user_id = $2 RETURNING *',
       [refreshToken, id],
     );
@@ -72,7 +72,7 @@ export class TokenRepository {
   }
 
   async delete(refreshToken: JWT) {
-    const dbResponse = await this.dbService.query(
+    const dbResponse = await this.dbService.query<UserTokenDataFromDB>(
       'DELETE FROM tokens WHERE refresh_token = $1 RETURNING *',
       [refreshToken],
     );
@@ -85,7 +85,7 @@ export class TokenRepository {
   }
 
   async deleteByUserId(id: number) {
-    const dbResponse = await this.dbService.query(
+    const dbResponse = await this.dbService.query<UserTokenDataFromDB>(
       'DELETE FROM tokens WHERE user_id = $1 RETURNING *',
       [id],
     );

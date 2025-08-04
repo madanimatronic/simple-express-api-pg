@@ -1,18 +1,10 @@
 import { UserService } from '@/services/UserService';
 import { coercedIntIdSchema } from '@/validation/common';
-import { userCreationSchema, userSchema } from '@/validation/user-validation';
+import { userSchema } from '@/validation/user-validation';
 import { Request, Response } from 'express';
 
 export class UserController {
   constructor(private readonly userService: UserService) {}
-
-  async create(req: Request, res: Response) {
-    const userData = userCreationSchema.parse(req.body);
-
-    const newUser = await this.userService.create(userData);
-
-    res.json(newUser);
-  }
 
   async getAll(req: Request, res: Response) {
     const users = await this.userService.getAll();

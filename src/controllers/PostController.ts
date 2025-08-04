@@ -1,5 +1,5 @@
 import { PostService } from '@/services/PostService';
-import { Post } from '@/types/Post';
+import { PostFromDB } from '@/types/Post';
 import { coercedIntIdSchema } from '@/validation/common';
 import { postCreationSchema } from '@/validation/post-validation';
 import { Request, Response } from 'express';
@@ -27,7 +27,7 @@ export class PostController {
 
   async getAll(req: Request, res: Response) {
     const userId = z.optional(coercedIntIdSchema).parse(req.query.userId);
-    let posts: Post[] | null = [];
+    let posts: PostFromDB[] | null = [];
 
     if (userId) {
       posts = await this.postService.getAllByUserId(userId);
