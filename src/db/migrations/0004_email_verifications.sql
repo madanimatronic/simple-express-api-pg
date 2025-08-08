@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS email_verifications(
   id SERIAL PRIMARY KEY,
   user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
-  verification_uuid UUID NOT NULL UNIQUE,
+  verification_uuid UUID UNIQUE NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '1 hour')
 );
