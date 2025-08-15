@@ -28,6 +28,13 @@ export class UnauthorizedError extends HttpError {
   }
 }
 
+export class ForbiddenError extends HttpError {
+  constructor(errorData?: PartialDescriptiveHttpErrorData) {
+    const { message = 'Forbidden', issues } = errorData ?? {};
+    super(403, message, issues);
+  }
+}
+
 export class NotFoundError extends HttpError {
   constructor(errorData?: PartialDescriptiveHttpErrorData) {
     const { message = 'Not Found', issues } = errorData ?? {};

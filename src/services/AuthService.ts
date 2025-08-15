@@ -14,6 +14,7 @@ import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { EmailService } from './EmailService';
 import { TokenService } from './TokenService';
+import { UserRoleService } from './UserRoleService';
 import { UserService } from './UserService';
 
 export class AuthService {
@@ -22,6 +23,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly tokenService: TokenService,
     private readonly emailService: EmailService,
+    private readonly userRoleService: UserRoleService,
   ) {}
 
   // TODO: подумать об уместности названия registerUser
@@ -43,7 +45,11 @@ export class AuthService {
       password: hashedPassword,
     });
 
-    const userDto = new AuthUserDto(newUser);
+    const userRole = 'USER';
+
+    await this.userRoleService.assignRoleToUserByName(newUser.id, userRole);
+
+    const userDto = new AuthUserDto(newUser, [userRole]);
 
     // Деструктуризация экземпляра класса для большей надёжности
     const tokens = await this.tokenService.createTokensForUser({ ...userDto });
@@ -72,7 +78,11 @@ export class AuthService {
       throw new UnauthorizedError({ message: 'Wrong password' });
     }
 
-    const userDto = new AuthUserDto(user);
+    const userRoles = (
+      await this.userRoleService.getUserNamedRoles(user.id)
+    ).map((role) => role.name);
+
+    const userDto = new AuthUserDto(user, userRoles);
 
     const tokens = await this.tokenService.createTokensForUser({ ...userDto });
 
@@ -124,7 +134,11 @@ export class AuthService {
       });
     }
 
-    const userDto = new AuthUserDto(user);
+    const userRoles = (
+      await this.userRoleService.getUserNamedRoles(user.id)
+    ).map((role) => role.name);
+
+    const userDto = new AuthUserDto(user, userRoles);
 
     return await this.tokenService.refreshTokensForUser(
       { ...userDto },

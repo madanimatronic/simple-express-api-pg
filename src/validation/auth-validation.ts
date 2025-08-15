@@ -1,5 +1,6 @@
 import { z } from 'zod/v4';
 import { intIdSchema } from './common';
+import { roleNameSchema } from './role-validation';
 
 export const emailSchema = z.email();
 export const passwordSchema = z.string().min(6);
@@ -10,6 +11,7 @@ export const userJwtPayloadSchema = z.object({
   id: intIdSchema,
   email: emailSchema,
   isEmailVerified: z.boolean(),
+  roles: z.array(roleNameSchema),
 });
 
 export const authHeaderSchema = z.string().startsWith('Bearer ');

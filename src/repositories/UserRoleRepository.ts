@@ -1,5 +1,5 @@
 import { InternalServerError } from '@/errors/http-errors';
-import { RoleName, RoleNameFromDB, UserRoleFromDB } from '@/types/role';
+import { RoleFromDB, UserRoleFromDB } from '@/types/role';
 import { DatabaseService } from '@/types/services/DatabaseService';
 
 export class UserRoleRepository {
@@ -14,48 +14,65 @@ export class UserRoleRepository {
     return dbResponse.rows[0];
   }
 
-  async assignRoleToUserByRoleName(userId: number, roleName: RoleName) {
-    const dbResponse = await this.dbService.query<UserRoleFromDB>(
-      `INSERT INTO user_roles (user_id, role_id)
-      VALUES ($1, (SELECT id FROM roles WHERE name = $2)) RETURNING *`,
-      [userId, roleName],
+  async assignRolesToUser(userId: number, roleIds: number[]) {
+    // Причина, по которой существуют ORM и query-builder'ы:
+    // Генерирует строку формата
+    // ($1, $2),
+    // ($1, $3),
+    // ...
+    // ($1, $x)
+    const valuesQueryPart = roleIds.reduce(
+      (accum, _, index) =>
+        accum +
+        `($1, $${index + 2})` +
+        (index + 1 === roleIds.length ? '' : ',\n'),
+      '',
     );
 
-    return dbResponse.rows[0];
+    const dbResponse = await this.dbService.query<UserRoleFromDB>(
+      `INSERT INTO 
+        user_roles (user_id, role_id) VALUES ${valuesQueryPart}
+        RETURNING *`,
+      [userId, ...roleIds],
+    );
+
+    return dbResponse.rows;
   }
 
   async getUserRoles(userId: number) {
-    const dbResponse = await this.dbService.query<RoleNameFromDB>(
-      `SELECT r.name FROM
-      user_roles ur JOIN roles r ON ur.role_id = r.id
-      WHERE ur.user_id = $1`,
+    const dbResponse = await this.dbService.query<UserRoleFromDB>(
+      'SELECT * FROM user_roles WHERE user_id = $1',
       [userId],
     );
 
-    const roles = dbResponse.rows.map((row) => row.name);
-
-    return roles;
+    return dbResponse.rows;
   }
 
-  async findUserRole(userId: number, roleName: RoleName) {
-    const dbResponse = await this.dbService.query<RoleNameFromDB>(
-      `SELECT r.name FROM
-      user_roles ur JOIN roles r ON ur.role_id = r.id
-      WHERE ur.user_id = $1 AND r.name = $2`,
-      [userId, roleName],
+  async getUserNamedRoles(userId: number) {
+    const dbResponse = await this.dbService.query<RoleFromDB>(
+      `SELECT r FROM
+      user_roles ur JOIN roles r
+      ON ur.role_id = r.id WHERE ur.user_id = $1`,
+      [userId],
+    );
+
+    return dbResponse.rows;
+  }
+
+  async findUserRole(userId: number, roleId: number) {
+    const dbResponse = await this.dbService.query<UserRoleFromDB>(
+      'SELECT * FROM user_roles WHERE user_id = $1 AND role_id = $2',
+      [userId, roleId],
     );
 
     if (!dbResponse.rowCount) {
       return null;
     }
 
-    const role = dbResponse.rows[0].name;
-
-    return role;
+    return dbResponse.rows[0];
   }
 
-  // TODO: протестировать с пустым roles, ну и протестировать всё остальное
-  async updateRolesForUser(userId: number, roles: RoleName[]) {
+  async updateRolesForUser(userId: number, roleIds: number[]) {
     // Транзакции делаются только индивидуальными клиентами
     const client = await this.dbService.connect();
 
@@ -68,30 +85,11 @@ export class UserRoleRepository {
 
       await client.query('DELETE FROM user_roles WHERE user_id = $1', [userId]);
 
-      // Причина, по которой существуют ORM и query-builder'ы:
-      // Генерирует строку формата
-      // ($1, $2),
-      // ($1, $3),
-      // ...
-      // ($1, $x)
-      const valuesQueryPart = roles.reduce(
-        (accum, _, index) =>
-          accum +
-          `($1, $${index + 2})` +
-          (index + 1 === roles.length ? '' : ',\n'),
-        '',
-      );
-
-      const dbResponse = await client.query<UserRoleFromDB>(
-        `INSERT INTO 
-        user_roles (user_id, role_id) VALUES ${valuesQueryPart}
-        RETURNING *`,
-        [userId, ...roles],
-      );
+      const newRoles = await this.assignRolesToUser(userId, roleIds);
 
       await client.query('COMMIT');
 
-      return dbResponse.rows;
+      return newRoles;
     } catch {
       await client.query('ROLLBACK');
       throw new InternalServerError({
@@ -102,12 +100,10 @@ export class UserRoleRepository {
     }
   }
 
-  async removeRoleFromUser(userId: number, roleName: RoleName) {
+  async removeRoleFromUser(userId: number, roleId: number) {
     const dbResponse = await this.dbService.query<UserRoleFromDB>(
-      `WITH r AS (SELECT id FROM roles WHERE name = $1)
-      DELETE FROM user_roles WHERE user_id = $2
-      AND role_id IN (SELECT id FROM r) RETURNING *`,
-      [roleName, userId],
+      'DELETE FROM user_roles WHERE user_id = $1 AND role_id = $2',
+      [userId, roleId],
     );
 
     if (!dbResponse.rowCount) {

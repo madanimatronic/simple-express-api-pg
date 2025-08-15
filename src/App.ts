@@ -6,23 +6,31 @@ import { Server } from 'node:http';
 import { env } from './config/env';
 import { AuthController } from './controllers/AuthController';
 import { PostController } from './controllers/PostController';
+import { RoleController } from './controllers/RoleController';
 import { UserController } from './controllers/UserController';
+import { UserRoleController } from './controllers/UserRoleController';
 import { pool } from './db';
 import { authHandler } from './middleware/auth-handler';
 import { errorHandler } from './middleware/error-handler';
 import { notFoundHandler } from './middleware/not-found-handler';
+import { roleHandler } from './middleware/role-handler';
 import { AuthRepository } from './repositories/AuthRepository';
 import { PostRepository } from './repositories/PostRepository';
+import { RoleRepository } from './repositories/RoleRepository';
 import { TokenRepository } from './repositories/TokenRepository';
 import { UserRepository } from './repositories/UserRepository';
+import { UserRoleRepository } from './repositories/UserRoleRepository';
 import { createAuthRouter } from './routes/auth-routes';
 import { createPostRouter } from './routes/post-routes';
+import { createRoleRouter } from './routes/role-routes';
 import { createUserRouter } from './routes/user-routes';
 import { AuthService } from './services/AuthService';
 import { EmailService } from './services/EmailService';
 import { FileService } from './services/FileService';
 import { PostService } from './services/PostService';
+import { RoleService } from './services/RoleService';
 import { TokenService } from './services/TokenService';
+import { UserRoleService } from './services/UserRoleService';
 import { UserService } from './services/UserService';
 import { DatabaseService } from './types/services/DatabaseService';
 
@@ -56,18 +64,31 @@ export class App {
     const tokenRepository = new TokenRepository(this.dbService);
     const tokenService = new TokenService(tokenRepository);
 
+    const roleRepository = new RoleRepository(this.dbService);
+    const roleService = new RoleService(roleRepository);
+    const roleController = new RoleController(roleService);
+
+    const userRoleRepository = new UserRoleRepository(this.dbService);
+    const userRoleService = new UserRoleService(
+      userRoleRepository,
+      roleService,
+    );
+    const userRoleController = new UserRoleController(userRoleService);
+
     const authRepository = new AuthRepository(this.dbService);
     const authService = new AuthService(
       authRepository,
       userService,
       tokenService,
       emailService,
+      userRoleService,
     );
     const authController = new AuthController(authService);
 
-    const userRouter = createUserRouter(userController);
+    const userRouter = createUserRouter(userController, userRoleController);
     const postRouter = createPostRouter(postController);
     const authRouter = createAuthRouter(authController);
+    const roleRouter = createRoleRouter(roleController);
 
     this.expressApp.use(express.json());
     this.expressApp.use(cookieParser());
@@ -75,7 +96,14 @@ export class App {
     this.expressApp.use('/static', express.static('static'));
     this.expressApp.use(fileUpload());
     this.expressApp.use('/api/auth', authRouter);
+    this.expressApp.use(
+      '/api',
+      authHandler(tokenService),
+      roleHandler(['ADMIN']),
+      roleRouter,
+    );
     // TODO: Данный вариант для теста, сделать authHandler на уровне роутеров
+    // TODO: Добавить проверку ролей в некоторые эндпоинты user'а
     this.expressApp.use('/api', authHandler(tokenService), userRouter);
     this.expressApp.use('/api', authHandler(tokenService), postRouter);
     this.expressApp.use(notFoundHandler);
