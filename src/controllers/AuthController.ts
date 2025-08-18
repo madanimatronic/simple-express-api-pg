@@ -1,7 +1,7 @@
 import { env } from '@/config/env';
-import { UnauthorizedError } from '@/errors/http-errors';
+import { ForbiddenError, UnauthorizedError } from '@/errors/http-errors';
 import { AuthService } from '@/services/AuthService';
-import { jwtSchema } from '@/validation/auth-validation';
+import { jwtSchema, userJwtPayloadSchema } from '@/validation/auth-validation';
 import { uuidSchema } from '@/validation/common';
 import {
   userCreationSchema,
@@ -52,6 +52,20 @@ export class AuthController {
     }
 
     res.clearCookie('refreshToken');
+
+    res.json({ result: 'success' });
+  }
+
+  async initiateEmailVerification(req: Request, res: Response) {
+    const { isEmailVerified, id, email } = userJwtPayloadSchema.parse(req.user);
+
+    if (isEmailVerified) {
+      throw new ForbiddenError({ message: 'Email is already verified' });
+    }
+
+    const emailVerificationData = { id, email };
+
+    await this.authService.initiateEmailVerification(emailVerificationData);
 
     res.json({ result: 'success' });
   }

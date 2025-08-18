@@ -1,9 +1,12 @@
 import { AuthController } from '@/controllers/AuthController';
-import { Router } from 'express';
+import { RequestHandler, Router } from 'express';
 
 // TODO: может стоит нейминг немного поменять,
 // например /register-user, /login-user и т.д. (а может и нет)
-export const createAuthRouter = (authController: AuthController) => {
+export const createAuthRouter = (
+  authController: AuthController,
+  authMiddleware: RequestHandler,
+) => {
   const authRouter = Router();
 
   authRouter.post('/register', authController.register.bind(authController));
@@ -14,6 +17,11 @@ export const createAuthRouter = (authController: AuthController) => {
     authController.verifyEmail.bind(authController),
   );
   authRouter.post('/refresh', authController.refresh.bind(authController));
+  authRouter.post(
+    '/initiate-email-verification',
+    authMiddleware,
+    authController.initiateEmailVerification.bind(authController),
+  );
 
   return authRouter;
 };

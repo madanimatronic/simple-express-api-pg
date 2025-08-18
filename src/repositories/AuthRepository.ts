@@ -7,7 +7,12 @@ export class AuthRepository {
 
   async saveEmailVerificationUUID(userId: number, uuid: string) {
     const dbResponse = await this.dbService.query<EmailVerificationDataFromDB>(
-      'INSERT INTO email_verifications (user_id, verification_uuid) VALUES ($1, $2) RETURNING *',
+      `INSERT INTO email_verifications
+      (user_id, verification_uuid) VALUES ($1, $2)
+      ON CONFLICT (user_id) DO UPDATE SET
+      user_id = $1, verification_uuid = $2,
+      created_at = DEFAULT, expires_at = DEFAULT
+      RETURNING *`,
       [userId, uuid],
     );
 

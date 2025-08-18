@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import path from 'node:path';
 import { Pool } from 'pg';
 
-const migrate = async () => {
+const executeSqlInFolder = async (actionName: string, folderName: string) => {
   const pool = new Pool({
     host: env.POSTGRES_HOST,
     port: env.POSTGRES_PORT,
@@ -13,26 +13,39 @@ const migrate = async () => {
   });
 
   try {
-    console.log('Starting DB migration...');
-    const migrationsDir = path.join(__dirname, 'migrations');
-    const files = await fs.readdir(migrationsDir);
+    console.log(`Starting ${actionName}...`);
+    const sqlDir = path.join(__dirname, folderName);
+    const files = await fs.readdir(sqlDir);
 
     const sqlFiles = files.filter((file) => file.endsWith('.sql')).sort();
 
     for (const file of sqlFiles) {
-      const filePath = path.join(migrationsDir, file);
+      const filePath = path.join(sqlDir, file);
       const sql = await fs.readFile(filePath, { encoding: 'utf-8' });
 
       console.log(`Executing ${file}...`);
       await pool.query(sql);
     }
 
-    console.log('DB migration finished successfully!');
+    console.log(`${actionName} finished successfully!`);
   } catch (err) {
-    console.error('DB migration failed:', err);
+    console.error(`${actionName} failed:`, err);
   } finally {
     await pool.end();
   }
 };
 
-migrate();
+const migrate = async () => {
+  await executeSqlInFolder('DB migration', 'migrations');
+};
+
+const seed = async () => {
+  await executeSqlInFolder('DB seeding', 'seeds');
+};
+
+const buildDB = async () => {
+  await migrate();
+  await seed();
+};
+
+buildDB();

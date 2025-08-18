@@ -50,7 +50,7 @@ export class UserRoleRepository {
 
   async getUserNamedRoles(userId: number) {
     const dbResponse = await this.dbService.query<RoleFromDB>(
-      `SELECT r FROM
+      `SELECT r.* FROM
       user_roles ur JOIN roles r
       ON ur.role_id = r.id WHERE ur.user_id = $1`,
       [userId],

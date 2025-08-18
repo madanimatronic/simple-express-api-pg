@@ -3,6 +3,7 @@ import { FullUserDto } from '@/dto/FullUserDto';
 import {
   BadRequestError,
   ConflictError,
+  InternalServerError,
   NotFoundError,
   UnauthorizedError,
 } from '@/errors/http-errors';
@@ -45,20 +46,34 @@ export class AuthService {
       password: hashedPassword,
     });
 
-    const userRole = 'USER';
+    try {
+      const userRole = 'USER';
 
-    await this.userRoleService.assignRoleToUserByName(newUser.id, userRole);
+      await this.userRoleService.assignRoleToUserByName(newUser.id, userRole);
 
-    const userDto = new AuthUserDto(newUser, [userRole]);
+      const userDto = new AuthUserDto(newUser, [userRole]);
 
-    // Деструктуризация экземпляра класса для большей надёжности
-    const tokens = await this.tokenService.createTokensForUser({ ...userDto });
+      // Деструктуризация экземпляра класса для большей надёжности
+      const tokens = await this.tokenService.createTokensForUser({
+        ...userDto,
+      });
 
-    await this.initiateEmailVerification(newUser);
+      const emailVerificationData = {
+        id: newUser.id,
+        email: newUser.email,
+      };
 
-    // TODO: возможно стоит вместо userDto отправлять
-    // более подробный объект данных пользователя (а может и нет)
-    return { ...tokens, user: userDto };
+      await this.initiateEmailVerification(emailVerificationData);
+
+      // TODO: возможно стоит вместо userDto отправлять
+      // более подробный объект данных пользователя (а может и нет)
+      return { ...tokens, user: userDto };
+    } catch {
+      await this.userService.delete(newUser.id);
+      // await this.userRoleService.removeRoleFromUser(newUser.id, 1);
+      // await this.tokenService.deleteRefreshTokenByUserId(newUser.id);
+      throw new InternalServerError({ message: 'Registration failed' });
+    }
   }
 
   async login(userData: UserLoginData) {
@@ -146,10 +161,7 @@ export class AuthService {
     );
   }
 
-  // TODO: если такой параметр избыточен, то передавать хотя бы
-  // userId и email
-  // private можно убрать при необходимости
-  private async initiateEmailVerification(user: UserFromDB) {
+  async initiateEmailVerification(user: Pick<UserFromDB, 'id' | 'email'>) {
     const emailVerificationUUID = uuidv4();
 
     await this.authRepository.saveEmailVerificationUUID(

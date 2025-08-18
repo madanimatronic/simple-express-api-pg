@@ -1,7 +1,7 @@
 import { z } from 'zod/v4';
 import { intIdSchema } from './common';
 
-export const roleNameSchema = z.union([z.literal('USER'), z.literal('ADMIN')]);
+export const roleNameSchema = z.string().min(1);
 
 export const roleFromDbSchema = z.object({
   id: intIdSchema,

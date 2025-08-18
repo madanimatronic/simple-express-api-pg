@@ -85,9 +85,11 @@ export class App {
     );
     const authController = new AuthController(authService);
 
+    const authMiddleware = authHandler(tokenService);
+
     const userRouter = createUserRouter(userController, userRoleController);
     const postRouter = createPostRouter(postController);
-    const authRouter = createAuthRouter(authController);
+    const authRouter = createAuthRouter(authController, authMiddleware);
     const roleRouter = createRoleRouter(roleController);
 
     this.expressApp.use(express.json());
@@ -96,16 +98,16 @@ export class App {
     this.expressApp.use('/static', express.static('static'));
     this.expressApp.use(fileUpload());
     this.expressApp.use('/api/auth', authRouter);
+    // TODO: Данный вариант для теста, сделать authHandler на уровне роутеров
+    // TODO: Добавить проверку ролей в некоторые эндпоинты user'а
+    this.expressApp.use('/api', authMiddleware, userRouter);
+    this.expressApp.use('/api', authMiddleware, postRouter);
     this.expressApp.use(
       '/api',
-      authHandler(tokenService),
+      authMiddleware,
       roleHandler(['ADMIN']),
       roleRouter,
     );
-    // TODO: Данный вариант для теста, сделать authHandler на уровне роутеров
-    // TODO: Добавить проверку ролей в некоторые эндпоинты user'а
-    this.expressApp.use('/api', authHandler(tokenService), userRouter);
-    this.expressApp.use('/api', authHandler(tokenService), postRouter);
     this.expressApp.use(notFoundHandler);
     this.expressApp.use(errorHandler());
   }
