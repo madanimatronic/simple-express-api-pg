@@ -24,7 +24,6 @@ export const userSchema = z.object({
 export const userCreationSchema = z.object({
   name: z.string().min(1),
   about: z.optional(z.string().min(1)),
-  points: z.optional(z.coerce.number().int()),
   email: emailSchema,
   password: passwordSchema,
 });

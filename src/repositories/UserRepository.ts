@@ -6,14 +6,12 @@ export class UserRepository {
   constructor(private readonly dbService: DatabaseService) {}
 
   async create(userData: UserCreationData) {
-    const { name, email, password, about, points } = userData;
+    const { name, email, password, about } = userData;
 
-    // TODO: можно использовать query builder'ы для динамических запросов вместо points || 0
-    // Если points undefined -> в таблицу ставится NULL -> ошибка по ограничению NOT NULL
     const dbResponse = await this.dbService.query<UserFromDB>(
-      `INSERT INTO users (name, email, password, about, points) 
-      VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [name, email, password, about, points || 0],
+      `INSERT INTO users (name, email, password, about) 
+      VALUES ($1, $2, $3, $4) RETURNING *`,
+      [name, email, password, about],
     );
 
     return dbResponse.rows[0];
@@ -53,6 +51,7 @@ export class UserRepository {
     return dbResponse.rows[0];
   }
 
+  // Частичное обновление было бы более гибким
   async update(id: number, userData: User) {
     const { name, email, password, about, points, isEmailVerified } = userData;
 
@@ -66,7 +65,7 @@ export class UserRepository {
       is_email_verified = $6 
       WHERE id = $7 
       RETURNING *`,
-      [name, email, password, about, points || 0, isEmailVerified, id],
+      [name, email, password, about, points, isEmailVerified, id],
     );
 
     if (!dbResponse.rowCount) {

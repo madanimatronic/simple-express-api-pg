@@ -72,6 +72,7 @@ export class App {
     const userRoleService = new UserRoleService(
       userRoleRepository,
       roleService,
+      userService,
     );
     const userRoleController = new UserRoleController(userRoleService);
 

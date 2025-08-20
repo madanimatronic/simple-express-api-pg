@@ -1,6 +1,7 @@
 import { InternalServerError } from '@/errors/http-errors';
 import { RoleFromDB, UserRoleFromDB } from '@/types/role';
 import { DatabaseService } from '@/types/services/DatabaseService';
+import { Client, PoolClient } from 'pg';
 
 export class UserRoleRepository {
   constructor(private readonly dbService: DatabaseService) {}
@@ -14,7 +15,16 @@ export class UserRoleRepository {
     return dbResponse.rows[0];
   }
 
-  async assignRolesToUser(userId: number, roleIds: number[]) {
+  // Этот метод также используется в транзакции,
+  // а в транзакции обязательно должен использоваться один клиент,
+  // поэтому как исключение, здесь передаётся данный клиент
+  async assignRolesToUser(
+    userId: number,
+    roleIds: number[],
+    transactionClient?: Client | PoolClient,
+  ) {
+    const localDbService = transactionClient ?? this.dbService;
+
     // Причина, по которой существуют ORM и query-builder'ы:
     // Генерирует строку формата
     // ($1, $2),
@@ -29,7 +39,7 @@ export class UserRoleRepository {
       '',
     );
 
-    const dbResponse = await this.dbService.query<UserRoleFromDB>(
+    const dbResponse = await localDbService.query<UserRoleFromDB>(
       `INSERT INTO 
         user_roles (user_id, role_id) VALUES ${valuesQueryPart}
         RETURNING *`,
@@ -85,7 +95,7 @@ export class UserRoleRepository {
 
       await client.query('DELETE FROM user_roles WHERE user_id = $1', [userId]);
 
-      const newRoles = await this.assignRolesToUser(userId, roleIds);
+      const newRoles = await this.assignRolesToUser(userId, roleIds, client);
 
       await client.query('COMMIT');
 
@@ -102,7 +112,7 @@ export class UserRoleRepository {
 
   async removeRoleFromUser(userId: number, roleId: number) {
     const dbResponse = await this.dbService.query<UserRoleFromDB>(
-      'DELETE FROM user_roles WHERE user_id = $1 AND role_id = $2',
+      'DELETE FROM user_roles WHERE user_id = $1 AND role_id = $2 RETURNING *',
       [userId, roleId],
     );
 

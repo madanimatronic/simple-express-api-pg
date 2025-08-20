@@ -49,7 +49,7 @@ export class RoleController {
   async delete(req: Request, res: Response) {
     const id = coercedIntIdSchema.parse(req.params.id);
 
-    const deletedRole = await this.roleService.getRoleById(id);
+    const deletedRole = await this.roleService.deleteRole(id);
 
     if (!deletedRole) {
       throw new NotFoundError({ message: 'Role not found' });

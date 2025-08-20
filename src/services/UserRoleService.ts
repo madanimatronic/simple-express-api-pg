@@ -1,12 +1,14 @@
-import { BadRequestError } from '@/errors/http-errors';
+import { BadRequestError, NotFoundError } from '@/errors/http-errors';
 import { UserRoleRepository } from '@/repositories/UserRoleRepository';
 import { RoleName } from '@/types/role';
 import { RoleService } from './RoleService';
+import { UserService } from './UserService';
 
 export class UserRoleService {
   constructor(
     private readonly userRoleRepository: UserRoleRepository,
     private readonly roleService: RoleService,
+    private readonly userService: UserService,
   ) {}
 
   async assignRoleToUser(userId: number, roleId: number) {
@@ -24,6 +26,9 @@ export class UserRoleService {
   }
 
   async assignRolesToUser(userId: number, roleIds: number[]) {
+    // Для более информативной ошибки, если такого пользователя нет
+    await this.getUser(userId);
+
     return await this.userRoleRepository.assignRolesToUser(userId, roleIds);
   }
 
@@ -32,6 +37,8 @@ export class UserRoleService {
       throw new BadRequestError({ message: 'User id is missing' });
     }
 
+    await this.getUser(userId);
+
     return await this.userRoleRepository.getUserRoles(userId);
   }
 
@@ -39,6 +46,8 @@ export class UserRoleService {
     if (!userId) {
       throw new BadRequestError({ message: 'User id is missing' });
     }
+
+    await this.getUser(userId);
 
     return await this.userRoleRepository.getUserNamedRoles(userId);
   }
@@ -65,5 +74,14 @@ export class UserRoleService {
     }
 
     return await this.userRoleRepository.removeRoleFromUser(userId, roleId);
+  }
+
+  private async getUser(userId: number) {
+    const user = await this.userService.getById(userId);
+    if (!user) {
+      throw new NotFoundError({ message: 'User not found' });
+    }
+
+    return user;
   }
 }
