@@ -1,7 +1,8 @@
+import { PublicUserDto } from '@/dto/PublicUserDto';
 import { BadRequestError } from '@/errors/http-errors';
 import { UserRepository } from '@/repositories/UserRepository';
 import { Email } from '@/types/auth';
-import { User, UserCreationData } from '@/types/User';
+import { PartialUser, UserCreationData } from '@/types/User';
 
 export class UserService {
   constructor(private readonly userRepository: UserRepository) {}
@@ -10,11 +11,21 @@ export class UserService {
     return await this.userRepository.create(userData);
   }
 
-  async getAll() {
+  async getAllUsersFullData() {
     return await this.userRepository.getAll();
   }
 
-  async getById(id: number) {
+  async getAllUsersPublicData() {
+    const fullUsersData = await this.userRepository.getAll();
+
+    const publicUsersData = fullUsersData.map((userData) => ({
+      ...new PublicUserDto(userData),
+    }));
+
+    return publicUsersData;
+  }
+
+  async getFullUserDataById(id: number) {
     if (!id) {
       throw new BadRequestError({ message: 'Id is missing' });
     }
@@ -22,7 +33,19 @@ export class UserService {
     return await this.userRepository.getById(id);
   }
 
-  async getByEmail(email: Email) {
+  async getPublicUserDataById(id: number) {
+    if (!id) {
+      throw new BadRequestError({ message: 'Id is missing' });
+    }
+
+    const fullUserData = await this.userRepository.getById(id);
+
+    const result = fullUserData && { ...new PublicUserDto(fullUserData) };
+
+    return result;
+  }
+
+  async getFullUserDataByEmail(email: Email) {
     if (!email) {
       throw new BadRequestError({ message: 'Email is missing' });
     }
@@ -30,8 +53,7 @@ export class UserService {
     return await this.userRepository.getByEmail(email);
   }
 
-  // Только полное обновление. Если что-то не указано в userData - оно будет null (логика как при создании)
-  async update(id: number, userData: User) {
+  async update(id: number, userData: PartialUser) {
     if (!id) {
       throw new BadRequestError({ message: 'Id is missing' });
     }

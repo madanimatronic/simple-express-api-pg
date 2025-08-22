@@ -31,7 +31,7 @@ export class AuthService {
   async registerUser(userData: UserCreationData) {
     const { email, password } = userData;
 
-    const existingUser = await this.userService.getByEmail(email);
+    const existingUser = await this.userService.getFullUserDataByEmail(email);
 
     if (existingUser) {
       throw new ConflictError({
@@ -79,7 +79,7 @@ export class AuthService {
   async login(userData: UserLoginData) {
     const { email, password } = userData;
 
-    const user = await this.userService.getByEmail(email);
+    const user = await this.userService.getFullUserDataByEmail(email);
 
     if (!user) {
       throw new NotFoundError({
@@ -141,7 +141,7 @@ export class AuthService {
     const userPayload = userJwtPayloadSchema.parse(tokenPayload);
 
     // Получаем актуальные данные пользователя, т.к. данные из токена могли устареть
-    const user = await this.userService.getById(userPayload.id);
+    const user = await this.userService.getFullUserDataById(userPayload.id);
 
     if (!user) {
       throw new UnauthorizedError({

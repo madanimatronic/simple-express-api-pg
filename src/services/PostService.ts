@@ -53,7 +53,7 @@ export class PostService {
       throw new BadRequestError({ message: 'Id is missing' });
     }
 
-    const user = await this.userService.getById(id);
+    const user = await this.userService.getFullUserDataById(id);
     if (!user) {
       return null;
     }

@@ -21,6 +21,8 @@ export const userSchema = z.object({
   password: passwordSchema,
 });
 
+export const partialUserSchema = userSchema.partial();
+
 export const userCreationSchema = z.object({
   name: z.string().min(1),
   about: z.optional(z.string().min(1)),

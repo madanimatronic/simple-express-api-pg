@@ -88,7 +88,12 @@ export class App {
 
     const authMiddleware = authHandler(tokenService);
 
-    const userRouter = createUserRouter(userController, userRoleController);
+    const userRouter = createUserRouter(
+      userController,
+      userRoleController,
+      authMiddleware,
+      roleHandler,
+    );
     const postRouter = createPostRouter(postController);
     const authRouter = createAuthRouter(authController, authMiddleware);
     const roleRouter = createRoleRouter(roleController);
@@ -99,9 +104,12 @@ export class App {
     this.expressApp.use('/static', express.static('static'));
     this.expressApp.use(fileUpload());
     this.expressApp.use('/api/auth', authRouter);
+    this.expressApp.use('/api', userRouter);
+    // ВАЖНО: Продумать как избежать конфликтов на разных уровнях
+    // при использовании middleware (для авторизации и т.п.) в роутерах. Пример бага:
+    // сначала подключается роутер1, где внутри используется roleHandler(['ADMIN']),
+    // а потом роутер2, где этого нет. Роутер 2 подвергнется действию этого roleHandler
     // TODO: Данный вариант для теста, сделать authHandler на уровне роутеров
-    // TODO: Добавить проверку ролей в некоторые эндпоинты user'а
-    this.expressApp.use('/api', authMiddleware, userRouter);
     this.expressApp.use('/api', authMiddleware, postRouter);
     this.expressApp.use(
       '/api',

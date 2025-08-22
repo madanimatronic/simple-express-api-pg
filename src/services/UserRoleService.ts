@@ -77,7 +77,7 @@ export class UserRoleService {
   }
 
   private async getUser(userId: number) {
-    const user = await this.userService.getById(userId);
+    const user = await this.userService.getFullUserDataById(userId);
     if (!user) {
       throw new NotFoundError({ message: 'User not found' });
     }

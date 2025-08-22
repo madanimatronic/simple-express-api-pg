@@ -1,6 +1,7 @@
 import { Email } from '@/types/auth';
 import { DatabaseService } from '@/types/services/DatabaseService';
 import { User, UserCreationData, UserFromDB } from '@/types/User';
+import { generateDynamicUpdateQueryPart } from '@/utils/helpers';
 
 export class UserRepository {
   constructor(private readonly dbService: DatabaseService) {}
@@ -51,21 +52,27 @@ export class UserRepository {
     return dbResponse.rows[0];
   }
 
-  // Частичное обновление было бы более гибким
-  async update(id: number, userData: User) {
-    const { name, email, password, about, points, isEmailVerified } = userData;
+  async update(id: number, userData: Partial<User>) {
+    const { isEmailVerified, ...otherUserData } = userData;
+
+    // Столбцы в БД иногда имеют отличающееся название,
+    // например is_email_verified вместо isEmailVerified,
+    // поэтому нужен маппинг, ибо дальше динамический запрос
+    // будет формироваться на основе маппинг-объекта
+    const dbMappedUserData = {
+      ...otherUserData,
+      is_email_verified: isEmailVerified,
+    };
+
+    const { updateFieldsQueryPart, updateValues, lastUpdateValueIndex } =
+      generateDynamicUpdateQueryPart(dbMappedUserData);
 
     const dbResponse = await this.dbService.query<UserFromDB>(
-      `UPDATE users SET 
-      name = $1, 
-      email = $2, 
-      password = $3, 
-      about = $4, 
-      points = $5, 
-      is_email_verified = $6 
-      WHERE id = $7 
+      `UPDATE users SET
+      ${updateFieldsQueryPart}
+      WHERE id = $${lastUpdateValueIndex + 1}
       RETURNING *`,
-      [name, email, password, about, points, isEmailVerified, id],
+      [...updateValues, id],
     );
 
     if (!dbResponse.rowCount) {
