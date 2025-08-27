@@ -1,5 +1,5 @@
 import { NotFoundError } from '@/errors/http-errors';
-import { UserRoleService } from '@/services/UserRoleService';
+import { UserRoleServiceManager } from '@/services/UserRoleServiceManager';
 import { coercedIntIdSchema } from '@/validation/common';
 import {
   assignMultipleRolesSchema,
@@ -8,7 +8,9 @@ import {
 import { Request, Response } from 'express';
 
 export class UserRoleController {
-  constructor(private readonly userRoleService: UserRoleService) {}
+  constructor(
+    private readonly userRoleServiceManager: UserRoleServiceManager,
+  ) {}
 
   async assignRoles(req: Request, res: Response) {
     const userId = coercedIntIdSchema.parse(req.params.id);
@@ -23,7 +25,7 @@ export class UserRoleController {
       roleIds = [parseResult.roleId];
     }
 
-    const assignedRoles = await this.userRoleService.assignRolesToUser(
+    const assignedRoles = await this.userRoleServiceManager.assignRolesToUser(
       userId,
       roleIds,
     );
@@ -34,7 +36,7 @@ export class UserRoleController {
   async getUserRoles(req: Request, res: Response) {
     const userId = coercedIntIdSchema.parse(req.params.id);
 
-    const roles = await this.userRoleService.getUserRoles(userId);
+    const roles = await this.userRoleServiceManager.getUserRoles(userId);
 
     res.json(roles);
   }
@@ -44,7 +46,7 @@ export class UserRoleController {
 
     const { roleId: roleIds } = assignMultipleRolesSchema.parse(req.body);
 
-    const updatedRoles = await this.userRoleService.updateRolesForUser(
+    const updatedRoles = await this.userRoleServiceManager.updateRolesForUser(
       userId,
       roleIds,
     );
@@ -56,7 +58,7 @@ export class UserRoleController {
     const userId = coercedIntIdSchema.parse(req.params.userId);
     const roleId = coercedIntIdSchema.parse(req.params.roleId);
 
-    const deletedRole = await this.userRoleService.removeRoleFromUser(
+    const deletedRole = await this.userRoleServiceManager.removeRoleFromUser(
       userId,
       roleId,
     );

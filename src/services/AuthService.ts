@@ -70,8 +70,6 @@ export class AuthService {
       return { ...tokens, user: userDto };
     } catch {
       await this.userService.delete(newUser.id);
-      // await this.userRoleService.removeRoleFromUser(newUser.id, 1);
-      // await this.tokenService.deleteRefreshTokenByUserId(newUser.id);
       throw new InternalServerError({ message: 'Registration failed' });
     }
   }
@@ -106,6 +104,10 @@ export class AuthService {
 
   async logout(refreshToken: JWT) {
     return await this.tokenService.deleteRefreshToken(refreshToken);
+  }
+
+  async logoutByUserId(userId: number) {
+    return await this.tokenService.deleteRefreshTokenByUserId(userId);
   }
 
   async verifyEmail(verificationUUID: string) {

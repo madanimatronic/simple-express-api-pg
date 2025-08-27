@@ -31,6 +31,7 @@ import { PostService } from './services/PostService';
 import { RoleService } from './services/RoleService';
 import { TokenService } from './services/TokenService';
 import { UserRoleService } from './services/UserRoleService';
+import { UserRoleServiceManager } from './services/UserRoleServiceManager';
 import { UserService } from './services/UserService';
 import { DatabaseService } from './types/services/DatabaseService';
 
@@ -45,6 +46,9 @@ export class App {
   }
 
   private init() {
+    // В контексте данной слоистой архитектуры
+    // возможно лучше объявлять слои от низших к высшим
+    // (от репозиториев к контроллерам), а не группировать их по доменным областям
     const fileService = new FileService();
 
     const userRepository = new UserRepository(this.dbService);
@@ -74,7 +78,6 @@ export class App {
       roleService,
       userService,
     );
-    const userRoleController = new UserRoleController(userRoleService);
 
     const authRepository = new AuthRepository(this.dbService);
     const authService = new AuthService(
@@ -85,6 +88,12 @@ export class App {
       userRoleService,
     );
     const authController = new AuthController(authService);
+
+    const userRoleServiceManager = new UserRoleServiceManager(
+      userRoleService,
+      authService,
+    );
+    const userRoleController = new UserRoleController(userRoleServiceManager);
 
     const authMiddleware = authHandler(tokenService);
 
@@ -105,10 +114,6 @@ export class App {
     this.expressApp.use(fileUpload());
     this.expressApp.use('/api/auth', authRouter);
     this.expressApp.use('/api', userRouter);
-    // ВАЖНО: Продумать как избежать конфликтов на разных уровнях
-    // при использовании middleware (для авторизации и т.п.) в роутерах. Пример бага:
-    // сначала подключается роутер1, где внутри используется roleHandler(['ADMIN']),
-    // а потом роутер2, где этого нет. Роутер 2 подвергнется действию этого roleHandler
     // TODO: Данный вариант для теста, сделать authHandler на уровне роутеров
     this.expressApp.use('/api', authMiddleware, postRouter);
     this.expressApp.use(
