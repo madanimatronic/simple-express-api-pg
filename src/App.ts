@@ -13,6 +13,7 @@ import { pool } from './db';
 import { authHandler } from './middleware/auth-handler';
 import { errorHandler } from './middleware/error-handler';
 import { notFoundHandler } from './middleware/not-found-handler';
+import { ownershipHandler } from './middleware/ownership-handler';
 import { roleHandler } from './middleware/role-handler';
 import { AuthRepository } from './repositories/AuthRepository';
 import { PostRepository } from './repositories/PostRepository';
@@ -95,33 +96,39 @@ export class App {
     );
     const userRoleController = new UserRoleController(userRoleServiceManager);
 
-    const authMiddleware = authHandler(tokenService);
+    const initializedAuthHandler = authHandler(tokenService);
+    const initializedOwnershipHandler = ownershipHandler(postService);
 
     const userRouter = createUserRouter(
       userController,
       userRoleController,
-      authMiddleware,
+      initializedAuthHandler,
+      roleHandler,
+      initializedOwnershipHandler,
+    );
+    const postRouter = createPostRouter(
+      postController,
+      initializedAuthHandler,
+      initializedOwnershipHandler,
+    );
+    const authRouter = createAuthRouter(authController, initializedAuthHandler);
+    const roleRouter = createRoleRouter(
+      roleController,
+      initializedAuthHandler,
       roleHandler,
     );
-    const postRouter = createPostRouter(postController);
-    const authRouter = createAuthRouter(authController, authMiddleware);
-    const roleRouter = createRoleRouter(roleController);
 
     this.expressApp.use(express.json());
     this.expressApp.use(cookieParser());
     this.expressApp.use(cors());
     this.expressApp.use('/static', express.static('static'));
     this.expressApp.use(fileUpload());
+
     this.expressApp.use('/api/auth', authRouter);
     this.expressApp.use('/api', userRouter);
-    // TODO: Данный вариант для теста, сделать authHandler на уровне роутеров
-    this.expressApp.use('/api', authMiddleware, postRouter);
-    this.expressApp.use(
-      '/api',
-      authMiddleware,
-      roleHandler(['ADMIN']),
-      roleRouter,
-    );
+    this.expressApp.use('/api', postRouter);
+    this.expressApp.use('/api', roleRouter);
+
     this.expressApp.use(notFoundHandler);
     this.expressApp.use(errorHandler());
   }

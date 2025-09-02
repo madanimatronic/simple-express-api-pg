@@ -5,7 +5,7 @@ import { RequestHandler, Router } from 'express';
 // например /register-user, /login-user и т.д. (а может и нет)
 export const createAuthRouter = (
   authController: AuthController,
-  authMiddleware: RequestHandler,
+  authHandler: RequestHandler,
 ) => {
   const authRouter = Router();
 
@@ -19,7 +19,7 @@ export const createAuthRouter = (
   authRouter.post('/refresh', authController.refresh.bind(authController));
   authRouter.post(
     '/initiate-email-verification',
-    authMiddleware,
+    authHandler,
     authController.initiateEmailVerification.bind(authController),
   );
 

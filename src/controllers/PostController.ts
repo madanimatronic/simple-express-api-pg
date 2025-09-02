@@ -1,7 +1,8 @@
 import { PostService } from '@/services/PostService';
 import { PostFromDB } from '@/types/Post';
+import { userJwtPayloadSchema } from '@/validation/auth-validation';
 import { coercedIntIdSchema } from '@/validation/common';
-import { postCreationSchema } from '@/validation/post-validation';
+import { postTextContentSchema } from '@/validation/post-validation';
 import { Request, Response } from 'express';
 import { z } from 'zod/v4';
 
@@ -9,7 +10,10 @@ export class PostController {
   constructor(private readonly postService: PostService) {}
 
   async create(req: Request, res: Response) {
-    const postData = postCreationSchema.parse(req.body);
+    const { id: authorId } = userJwtPayloadSchema.parse(req.user);
+    const postTextContent = postTextContentSchema.parse(req.body);
+
+    const postData = { authorId, ...postTextContent };
 
     const thumbnailFile = req.files?.thumbnail;
 
@@ -56,9 +60,12 @@ export class PostController {
   }
 
   async update(req: Request, res: Response) {
-    const id = coercedIntIdSchema.parse(req.params.id);
+    const postId = coercedIntIdSchema.parse(req.params.id);
 
-    const postData = postCreationSchema.parse(req.body);
+    const { id: authorId } = userJwtPayloadSchema.parse(req.user);
+    const postTextContent = postTextContentSchema.parse(req.body);
+
+    const postData = { authorId, ...postTextContent };
 
     const thumbnailFile = req.files?.thumbnail;
 
@@ -70,7 +77,7 @@ export class PostController {
     }
 
     const updatedPost = await this.postService.update(
-      id,
+      postId,
       postData,
       thumbnailFile,
     );

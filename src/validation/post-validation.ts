@@ -18,6 +18,11 @@ export const postSchema = z.object({
   thumbnail: z.nullable(postThumbnailSchema),
 });
 
+export const postTextContentSchema = z.object({
+  title: z.string(),
+  content: z.string(),
+});
+
 // thumbnail указывается отдельно при создании поста, поэтому postCreationSchema его не содержит
 export const postCreationSchema = z.object({
   title: z.string(),

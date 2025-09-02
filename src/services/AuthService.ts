@@ -107,7 +107,7 @@ export class AuthService {
   }
 
   async logoutByUserId(userId: number) {
-    return await this.tokenService.deleteRefreshTokenByUserId(userId);
+    return await this.tokenService.deleteRefreshTokensByUserId(userId);
   }
 
   async verifyEmail(verificationUUID: string) {

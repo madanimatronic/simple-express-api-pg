@@ -56,6 +56,15 @@ export class AuthController {
     res.json({ result: 'success' });
   }
 
+  // При данной реализации когда пользователь вручную инициирует подтверждение почты
+  // его токены должны быть перевыпущены после её подтверждения
+  // (клиент должен отправить запрос на refresh)
+  // Это нужно, чтобы статус верификации почты обновился.
+  // В противном случае или если пользователь сохранит access токен и воспользуется им,
+  // то его просто повторно перекинет на url удачной верификации, его почта так и будет
+  // подтверждена
+  // Альтернатива: в initiateEmailVerification брать isEmailVerified не из токена,
+  // а из БД, но это добавляет лишний overhead
   async initiateEmailVerification(req: Request, res: Response) {
     const { isEmailVerified, id, email } = userJwtPayloadSchema.parse(req.user);
 

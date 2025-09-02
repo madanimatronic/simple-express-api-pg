@@ -45,6 +45,7 @@ export class PostRepository {
     return dbResponse.rows;
   }
 
+  // Пока только полное обновление, для частичного нужен хотя бы query builder
   async update(id: number, postData: PostCreationDataWithThumbnail) {
     const { title, authorId, content, thumbnail } = postData;
 

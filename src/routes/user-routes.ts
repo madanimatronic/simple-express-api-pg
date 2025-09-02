@@ -1,6 +1,7 @@
 import { UserController } from '@/controllers/UserController';
 import { UserRoleController } from '@/controllers/UserRoleController';
-import { RoleHandler } from '@/types/middleware/RoleHandler';
+import { InitializedOwnershipHandler } from '@/types/middleware/ownership-handler';
+import { RoleHandler } from '@/types/middleware/role-handler';
 import { RequestHandler, Router } from 'express';
 
 export const createUserRouter = (
@@ -8,6 +9,7 @@ export const createUserRouter = (
   userRoleController: UserRoleController,
   authHandler: RequestHandler,
   roleHandler: RoleHandler,
+  ownershipHandler: InitializedOwnershipHandler,
 ) => {
   const userRouter = Router();
 
@@ -19,10 +21,18 @@ export const createUserRouter = (
   // а обновлению email и пароля место скорее в auth, поэтому нужно будет создать
   // более укзонаправленную функцию обновления.
   // Также полный update и т.п. можно оставить только для админов
-  userRouter.put('/users/:id', userController.update.bind(userController));
-  userRouter.delete('/users/:id', userController.delete.bind(userController));
+  userRouter.put(
+    '/users/:id',
+    ownershipHandler('id', 'user'),
+    userController.update.bind(userController),
+  );
+  userRouter.delete(
+    '/users/:id',
+    ownershipHandler('id', 'user'),
+    userController.delete.bind(userController),
+  );
 
-  userRouter.use('/users', roleHandler(['ADMIN']));
+  userRouter.use('/users/:id/roles', roleHandler(['ADMIN']));
 
   userRouter.post(
     '/users/:id/roles',

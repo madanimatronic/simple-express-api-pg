@@ -86,7 +86,7 @@ export class TokenService {
     return await this.tokenRepository.delete(refreshToken);
   }
 
-  async deleteRefreshTokenByUserId(id: number) {
+  async deleteRefreshTokensByUserId(id: number) {
     if (!id) {
       throw new BadRequestError({ message: 'User id is missing' });
     }

@@ -1,4 +1,3 @@
-import { ForbiddenError } from '@/errors/http-errors';
 import { UserService } from '@/services/UserService';
 import { userJwtPayloadSchema } from '@/validation/auth-validation';
 import { coercedIntIdSchema } from '@/validation/common';
@@ -31,15 +30,9 @@ export class UserController {
   async update(req: Request, res: Response) {
     const id = coercedIntIdSchema.parse(req.params.id);
 
-    const { id: authorizedUserId, roles } = userJwtPayloadSchema.parse(
-      req.user,
-    );
+    const { roles } = userJwtPayloadSchema.parse(req.user);
 
     const isAdmin = roles.includes('ADMIN');
-
-    if (id !== authorizedUserId && !isAdmin) {
-      throw new ForbiddenError({ message: 'Access denied' });
-    }
 
     const userData = partialUserSchema.parse(req.body);
 
@@ -61,16 +54,6 @@ export class UserController {
 
   async delete(req: Request, res: Response) {
     const id = coercedIntIdSchema.parse(req.params.id);
-
-    const { id: authorizedUserId, roles } = userJwtPayloadSchema.parse(
-      req.user,
-    );
-
-    const isAdmin = roles.includes('ADMIN');
-
-    if (id !== authorizedUserId && !isAdmin) {
-      throw new ForbiddenError({ message: 'Access denied' });
-    }
 
     const deletedUser = await this.userService.delete(id);
 
