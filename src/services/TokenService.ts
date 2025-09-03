@@ -70,7 +70,6 @@ export class TokenService {
   async saveRefreshToken(userId: number, refreshToken: JWT) {
     const existingToken = await this.tokenRepository.getByUserId(userId);
 
-    // TODO: подумать, действительно ли нужно что-то возвращать из данного метода
     if (!existingToken) {
       return await this.tokenRepository.create(userId, refreshToken);
     }

@@ -47,40 +47,28 @@ export class App {
   }
 
   private init() {
-    // В контексте данной слоистой архитектуры
-    // возможно лучше объявлять слои от низших к высшим
-    // (от репозиториев к контроллерам), а не группировать их по доменным областям
-    const fileService = new FileService();
-
     const userRepository = new UserRepository(this.dbService);
-    const userService = new UserService(userRepository);
-    const userController = new UserController(userService);
-
     const postRepository = new PostRepository(this.dbService);
+    const tokenRepository = new TokenRepository(this.dbService);
+    const roleRepository = new RoleRepository(this.dbService);
+    const userRoleRepository = new UserRoleRepository(this.dbService);
+    const authRepository = new AuthRepository(this.dbService);
+
+    const fileService = new FileService();
+    const userService = new UserService(userRepository);
     const postService = new PostService(
       postRepository,
       userService,
       fileService,
     );
-    const postController = new PostController(postService);
-
     const emailService = new EmailService();
-
-    const tokenRepository = new TokenRepository(this.dbService);
     const tokenService = new TokenService(tokenRepository);
-
-    const roleRepository = new RoleRepository(this.dbService);
     const roleService = new RoleService(roleRepository);
-    const roleController = new RoleController(roleService);
-
-    const userRoleRepository = new UserRoleRepository(this.dbService);
     const userRoleService = new UserRoleService(
       userRoleRepository,
       roleService,
       userService,
     );
-
-    const authRepository = new AuthRepository(this.dbService);
     const authService = new AuthService(
       authRepository,
       userService,
@@ -88,12 +76,15 @@ export class App {
       emailService,
       userRoleService,
     );
-    const authController = new AuthController(authService);
-
     const userRoleServiceManager = new UserRoleServiceManager(
       userRoleService,
       authService,
     );
+
+    const userController = new UserController(userService);
+    const postController = new PostController(postService);
+    const roleController = new RoleController(roleService);
+    const authController = new AuthController(authService);
     const userRoleController = new UserRoleController(userRoleServiceManager);
 
     const initializedAuthHandler = authHandler(tokenService);

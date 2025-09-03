@@ -1,8 +1,6 @@
 import { AuthController } from '@/controllers/AuthController';
 import { RequestHandler, Router } from 'express';
 
-// TODO: может стоит нейминг немного поменять,
-// например /register-user, /login-user и т.д. (а может и нет)
 export const createAuthRouter = (
   authController: AuthController,
   authHandler: RequestHandler,

@@ -27,8 +27,7 @@ export class AuthService {
     private readonly userRoleService: UserRoleService,
   ) {}
 
-  // TODO: подумать об уместности названия registerUser
-  async registerUser(userData: UserCreationData) {
+  async register(userData: UserCreationData) {
     const { email, password } = userData;
 
     const existingUser = await this.userService.getFullUserDataByEmail(email);
