@@ -19,6 +19,7 @@ import { testUUID } from '../../data/common';
 import { testFileName } from '../../data/file-data';
 import { createdThumbnailFilePath, testPostData } from '../../data/post-data';
 import { testUsersData } from '../../data/user-data';
+import { initTestDB } from '../../utils/db';
 
 // TODO: можно добавить ещё тестов
 
@@ -44,22 +45,7 @@ describe('Post Router', () => {
       connectionString: postgresContainer.getConnectionUri(),
     });
 
-    await testPool.query(
-      `CREATE TABLE IF NOT EXISTS users(
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        about VARCHAR(255),
-        points INTEGER NOT NULL DEFAULT 0
-      );
-
-      CREATE TABLE IF NOT EXISTS posts(
-        id SERIAL PRIMARY KEY,
-        title VARCHAR(255) NOT NULL,
-        author_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-        content VARCHAR(255) NOT NULL,
-        thumbnail VARCHAR(255)
-      );`,
-    );
+    await initTestDB(testPool);
 
     const app = new App(testPool);
 

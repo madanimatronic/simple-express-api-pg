@@ -1,3 +1,4 @@
+import { env } from '@/config/env';
 import { AuthUserDto } from '@/dto/AuthUserDto';
 import { FullUserDto } from '@/dto/FullUserDto';
 import {
@@ -62,10 +63,14 @@ export class AuthService {
         email: newUser.email,
       };
 
-      await this.initiateEmailVerification(emailVerificationData);
+      // В тестах при регистрации отправка письма отключена, т.к.
+      // тест выполняется слишком долго. Если потребуется протестировать отправку email,
+      // то это можно сделать отдельно. Хотя тестировать это будет сложно и
+      // скорее всего не потребуется
+      if (env.NODE_ENV !== 'test') {
+        await this.initiateEmailVerification(emailVerificationData);
+      }
 
-      // TODO: возможно стоит вместо userDto отправлять
-      // более подробный объект данных пользователя (а может и нет)
       return { ...tokens, user: userDto };
     } catch {
       await this.userService.delete(newUser.id);
