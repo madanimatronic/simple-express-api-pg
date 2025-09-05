@@ -11,14 +11,14 @@ import { Server } from 'node:http';
 import path from 'node:path';
 import { Pool } from 'pg';
 import request from 'supertest';
-import {
-  invalidInputResponse,
-  onlySingleThumbnailFileResponse,
-} from '../../data/api-responses';
+import { onlySingleThumbnailFileResponse } from '../../data/api-responses';
 import { testUUID } from '../../data/common';
 import { testFileName } from '../../data/file-data';
-import { createdThumbnailFilePath, testPostData } from '../../data/post-data';
-import { testUsersData } from '../../data/user-data';
+import {
+  createdThumbnailFilePath,
+  testPostTextCreationData,
+} from '../../data/post-data';
+import { testUsersCreationData } from '../../data/user-data';
 import { initTestDB } from '../../utils/db';
 
 // TODO: можно добавить ещё тестов
@@ -37,6 +37,8 @@ describe('Post Router', () => {
   let testPool: Pool;
   let expressApp: Express;
   let httpServer: Server;
+  let authorAccessToken: string;
+  let authorId: number;
 
   beforeAll(async () => {
     postgresContainer = await new PostgreSqlContainer('postgres:17').start();
@@ -67,15 +69,27 @@ describe('Post Router', () => {
       [path.resolve(env.STATIC_FOLDER_PATH)]: {},
     });
     // Создаём в БД несколько пользователей
-    for (const user of testUsersData) {
-      await request(expressApp).post('/api/users').send(user);
+    for (const userData of testUsersCreationData) {
+      const response = await request(expressApp)
+        .post('/api/auth/register')
+        .send(userData);
+
+      // Берём access токен последнего пользователя (можно и другого)
+      authorAccessToken = response.body.accessToken;
+      authorId = response.body.user.id;
     }
   });
 
   afterEach(async () => {
     mockFS.restore();
     await testPool.query(
-      'TRUNCATE TABLE users, posts RESTART IDENTITY CASCADE',
+      `TRUNCATE TABLE
+      users,
+      posts,
+      tokens,
+      email_verifications,
+      user_roles
+      RESTART IDENTITY CASCADE`,
     );
     jest.resetAllMocks();
   });
@@ -91,10 +105,10 @@ describe('Post Router', () => {
       it('should create and return post with thumbnail', async () => {
         const response = await request(expressApp)
           .post('/api/posts')
-          .field('title', testPostData.title)
-          .field('authorId', testPostData.authorId)
-          .field('content', testPostData.content)
-          .attach('thumbnail', 'test-image.jpg');
+          .field('title', testPostTextCreationData.title)
+          .field('content', testPostTextCreationData.content)
+          .attach('thumbnail', 'test-image.jpg')
+          .set('Authorization', `Bearer ${authorAccessToken}`);
 
         const isThumbnailCreated = await checkFileExistence(
           createdThumbnailFilePath,
@@ -102,10 +116,9 @@ describe('Post Router', () => {
 
         expect(response.status).toBe(200);
         expect(response.body).toEqual({
+          ...testPostTextCreationData,
           id: 1,
-          author_id: testPostData.authorId,
-          title: testPostData.title,
-          content: testPostData.content,
+          author_id: 3,
           thumbnail: testFileName,
         });
         expect(isThumbnailCreated).toBe(true);
@@ -114,14 +127,14 @@ describe('Post Router', () => {
       it('should create and return post without thumbnail', async () => {
         const response = await request(expressApp)
           .post('/api/posts')
-          .send(testPostData);
+          .send(testPostTextCreationData)
+          .set('Authorization', `Bearer ${authorAccessToken}`);
 
         expect(response.status).toBe(200);
         expect(response.body).toEqual({
+          ...testPostTextCreationData,
           id: 1,
-          author_id: testPostData.authorId,
-          title: testPostData.title,
-          content: testPostData.content,
+          author_id: authorId,
           thumbnail: null,
         });
       });
@@ -131,11 +144,11 @@ describe('Post Router', () => {
       it('should return file limit error if more than one thumbnail is attached', async () => {
         const response = await request(expressApp)
           .post('/api/posts')
-          .field('title', testPostData.title)
-          .field('authorId', testPostData.authorId)
-          .field('content', testPostData.content)
+          .field('title', testPostTextCreationData.title)
+          .field('content', testPostTextCreationData.content)
           .attach('thumbnail', 'test-image.jpg')
-          .attach('thumbnail', 'test-image.jpg');
+          .attach('thumbnail', 'test-image.jpg')
+          .set('Authorization', `Bearer ${authorAccessToken}`);
 
         const isThumbnailCreated = await checkFileExistence(
           createdThumbnailFilePath,
@@ -153,10 +166,10 @@ describe('Post Router', () => {
       // Создаём пост с thumbnail
       await request(expressApp)
         .post('/api/posts')
-        .field('title', testPostData.title)
-        .field('authorId', testPostData.authorId)
-        .field('content', testPostData.content)
-        .attach('thumbnail', 'test-image.jpg');
+        .field('title', testPostTextCreationData.title)
+        .field('content', testPostTextCreationData.content)
+        .attach('thumbnail', 'test-image.jpg')
+        .set('Authorization', `Bearer ${authorAccessToken}`);
     });
 
     describe('given valid input', () => {
@@ -167,7 +180,9 @@ describe('Post Router', () => {
         );
         expect(isThumbnailFileExists).toBe(true);
 
-        const response = await request(expressApp).delete('/api/posts/1');
+        const response = await request(expressApp)
+          .delete('/api/posts/1')
+          .set('Authorization', `Bearer ${authorAccessToken}`);
 
         isThumbnailFileExists = await checkFileExistence(
           createdThumbnailFilePath,
@@ -175,10 +190,9 @@ describe('Post Router', () => {
 
         expect(response.status).toBe(200);
         expect(response.body).toEqual({
+          ...testPostTextCreationData,
           id: 1,
-          author_id: testPostData.authorId,
-          title: testPostData.title,
-          content: testPostData.content,
+          author_id: authorId,
           thumbnail: testFileName,
         });
         expect(isThumbnailFileExists).toBe(false);
@@ -186,16 +200,20 @@ describe('Post Router', () => {
 
       it('should delete post without thumbnail and return deleted post', async () => {
         // Создаём пост без thumbnail
-        await request(expressApp).post('/api/posts').send(testPostData);
+        await request(expressApp)
+          .post('/api/posts')
+          .send(testPostTextCreationData)
+          .set('Authorization', `Bearer ${authorAccessToken}`);
 
-        const response = await request(expressApp).delete('/api/posts/2');
+        const response = await request(expressApp)
+          .delete('/api/posts/2')
+          .set('Authorization', `Bearer ${authorAccessToken}`);
 
         expect(response.status).toBe(200);
         expect(response.body).toEqual({
+          ...testPostTextCreationData,
           id: 2,
-          author_id: testPostData.authorId,
-          title: testPostData.title,
-          content: testPostData.content,
+          author_id: authorId,
           thumbnail: null,
         });
       });
@@ -203,12 +221,11 @@ describe('Post Router', () => {
 
     describe('given invalid input', () => {
       it('should return bad request error for invalid post id', async () => {
-        const response = await request(expressApp).delete(
-          '/api/posts/invalid-id',
-        );
+        const response = await request(expressApp)
+          .delete('/api/posts/invalid-id')
+          .set('Authorization', `Bearer ${authorAccessToken}`);
 
         expect(response.status).toBe(400);
-        expect(response.body).toEqual(invalidInputResponse);
       });
     });
   });

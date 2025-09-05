@@ -2,9 +2,8 @@ import { env } from '@/config/env';
 import path from 'node:path';
 import { testFileName } from './file-data';
 
-export const testPostData = {
+export const testPostTextCreationData = {
   title: 'test post',
-  authorId: 1,
   content: 'test content',
 };
 

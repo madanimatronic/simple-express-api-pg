@@ -51,7 +51,13 @@ describe('User Router', () => {
 
   afterEach(async () => {
     await testPool.query(
-      'TRUNCATE TABLE users, posts RESTART IDENTITY CASCADE',
+      `TRUNCATE TABLE
+      users,
+      posts,
+      tokens,
+      email_verifications,
+      user_roles
+      RESTART IDENTITY CASCADE`,
     );
     jest.resetAllMocks();
   });

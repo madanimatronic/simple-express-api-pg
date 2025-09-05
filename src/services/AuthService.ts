@@ -72,7 +72,8 @@ export class AuthService {
       }
 
       return { ...tokens, user: userDto };
-    } catch {
+    } catch (err) {
+      console.error(err);
       await this.userService.delete(newUser.id);
       throw new InternalServerError({ message: 'Registration failed' });
     }
